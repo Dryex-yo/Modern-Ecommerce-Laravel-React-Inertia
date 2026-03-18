@@ -25,9 +25,7 @@ class SettingController extends Controller
             'currency_symbol'  => 'Rp',
         ], $dbSettings);
 
-        return Inertia::render('Admin/Settings/Index', [
-            'settings' => $settings
-        ]);
+        return Inertia::render('Admin/Settings/Index');
     }
 
     public function store(Request $request)
@@ -65,5 +63,13 @@ class SettingController extends Controller
         }
 
         return back()->with('success', 'Settings & Preferences updated successfully!');
+    }
+
+    public function update(Request $request)
+    {
+        // ... logic upload gambar Anda ...
+
+        // WAJIB: Redirect kembali ke halaman yang sama
+        return redirect()->back()->with('success', 'Settings updated successfully.');
     }
 }

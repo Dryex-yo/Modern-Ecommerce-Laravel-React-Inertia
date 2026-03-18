@@ -40,23 +40,20 @@ class HandleInertiaRequests extends Middleware
                 ],
 
                 'settings' => function () {
+                    // 1. Ambil semua data dari database
                     $dbSettings = \App\Models\Setting::pluck('value', 'key')->toArray();
+                    
+                    // 2. Olah URL logo secara terpisah
                     $logoPath = $dbSettings['shop_logo'] ?? null;
-                    $logo = isset($dbSettings['shop_logo']) 
-                        ? asset('storage/' . $dbSettings['shop_logo']) 
-                        : null;
+                    $finalLogo = $logoPath ? asset('storage/' . $logoPath) : null;
 
-                    // Pastikan URL selalu diawali dengan /storage/
-
-                    if ($logoPath && !str_starts_with($logoPath, 'http')) {
-                        $dbSettings['shop_logo'] = asset('storage/' . $logoPath);
-                    }
-
+                    // 3. Gabungkan semua, tapi pastikan shop_logo menggunakan $finalLogo (URL lengkap)
                     return array_merge([
                         'shop_name' => 'DRYEX SHOP',
-                        'shop_email' => $dbSettings['shop_email'] ?? 'admin@dryex.com',
-                        'shop_logo' => null,
-                    ], $dbSettings);
+                        'shop_email' => 'admin@dryex.com',
+                    ], $dbSettings, [
+                        'shop_logo' => $finalLogo // Ini akan menimpa data mentah di $dbSettings
+                    ]);
                 },
 
                 // Ambil dari hasil closure settings di atas agar sinkron

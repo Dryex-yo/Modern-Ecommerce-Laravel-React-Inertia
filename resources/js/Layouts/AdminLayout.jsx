@@ -77,13 +77,11 @@ export default function AdminLayout({ children, user }) {
                     <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center overflow-hidden shadow-lg">
                         {settings?.shop_logo ? (
                             <img 
-                                src={settings.shop_logo ? `/storage/${settings.shop_logo}` : '/default-logo.png'}
-                                alt="Logo" 
+                                key={settings.shop_logo}
+                                src={settings.shop_logo}
+                                alt="Logo"  
                                 className="w-full h-full object-contain"
-                                onError={(e) => {
-                                    e.target.onerror = null; 
-                                    e.target.src = "/733bK7DRkO6lc7T7qAiQQSt6uSo21LuP27zdexlf.png"; // sediakan gambar cadangan jika link mati
-                                }}
+                                onError={(e) => { e.target.src = '/images/default-logo.png'; }}
                             />
                         ) : (
                             <LayoutGrid className="text-blue-600" />
