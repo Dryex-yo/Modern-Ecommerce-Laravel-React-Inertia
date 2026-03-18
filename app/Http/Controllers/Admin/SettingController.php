@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Setting;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
+
 
 class SettingController extends Controller
 {
@@ -67,9 +69,34 @@ class SettingController extends Controller
 
     public function update(Request $request)
     {
-        // ... logic upload gambar Anda ...
+        $inputs = $request->except(['_token', 'shop_logo']);
+        
+        foreach ($inputs as $key => $value) {
+        // UpdateOrCreate akan membuat record baru jika key belum ada
+        \App\Models\Setting::updateOrCreate(
+            ['key' => $key],
+            ['value' => $value ?? ''] // Pastikan tidak null agar tidak error di DB
+        );
 
-        // WAJIB: Redirect kembali ke halaman yang sama
-        return redirect()->back()->with('success', 'Settings updated successfully.');
+        return redirect()->back()->with('success', 'Pengaturan pembayaran dan pengiriman diperbarui!');
+        }
+    }
+
+    public function reset()
+    {
+        // 1. Ambil nama file logo lama
+        $oldLogo = Setting::where('key', 'shop_logo')->value('value');
+
+        // 2. Hapus file fisik dari storage jika ada
+        if ($oldLogo && Storage::disk('public')->exists($oldLogo)) {
+            Storage::disk('public')->delete($oldLogo);
+        }
+
+        // 3. Reset nilai ke default atau kosongkan
+        Setting::where('key', 'shop_logo')->update(['value' => null]);
+        Setting::where('key', 'shop_name')->update(['value' => 'DRYEX SHOP']);
+        Setting::where('key', 'shop_email')->update(['value' => 'admin@dryex.com']);
+
+        return redirect()->back()->with('success', 'Settings have been reset to default.');
     }
 }

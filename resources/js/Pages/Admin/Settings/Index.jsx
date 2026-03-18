@@ -1,9 +1,9 @@
 import React, { useState } from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head, useForm } from '@inertiajs/react';
+import { Head, useForm, router } from '@inertiajs/react';
 import { 
     Save, Store, Mail, Image, Phone, MapPin, 
-    Bell, ShoppingCart, Package, FileText, 
+    Bell, ShoppingCart, RotateCcw, Package, FileText, 
     Volume2, Settings as SettingsIcon,
     CreditCard, Truck, Landmark, Map
 } from 'lucide-react';
@@ -22,6 +22,7 @@ export default function Index({ auth, settings }) {
         notif_orders: settings.notif_orders === '1',
         notif_stock: settings.notif_stock === '1',
         notif_sound: settings.notif_sound === '1',
+        notif_email: settings.notif_email || false,
         // Payment & Shipping (Tab Baru)
         bank_name: settings.bank_name || '',
         bank_account: settings.bank_account || '',
@@ -43,30 +44,41 @@ export default function Index({ auth, settings }) {
         });
     };
 
+    const handleReset = () => {
+        if (confirm('Are you sure you want to reset all settings to default? This will delete your current logo.')) {
+            router.post(route('settings.reset'), {}, {
+                onSuccess: () => {
+                    // Beri notifikasi jika perlu
+                    console.log('Reset success');
+                },
+            });
+        }
+    };
+
     return (
         <AdminLayout user={auth.user}>
             <Head title="System Settings" />
 
-            <div className="flex flex-col md:flex-row md:items-end justify-between gap-4 mb-8">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
                 <div>
                     <h2 className="text-3xl font-black text-slate-800 tracking-tight">System Settings</h2>
                     <p className="text-sm text-slate-400 font-medium">Konfigurasi pusat kendali operasional toko Anda.</p>
                 </div>
                 
                 {/* Tab Switcher - Sekarang ada 3 Tab */}
-                <div className="flex bg-slate-100 p-1.5 rounded-3xl w-fit border border-slate-200/50">
+                <div className="flex bg-slate-100 p-1.5 rounded-3xl w-fit border border-slate-200/50 overflow-x-auto max-w-full">
                     <TabButton active={activeTab === 'general'} onClick={() => setActiveTab('general')} icon={<SettingsIcon size={14}/>} label="GENERAL" />
                     <TabButton active={activeTab === 'notif'} onClick={() => setActiveTab('notif')} icon={<Bell size={14}/>} label="PREFERENCES" />
                     <TabButton active={activeTab === 'payment'} onClick={() => setActiveTab('payment')} icon={<CreditCard size={14}/>} label="PAYMENTS" />
                 </div>
             </div>
 
-            <form onSubmit={submit} className="max-w-4xl">
+            <form onSubmit={submit} className="w-full space-y-8">
 
                     {/* --- TAB 1: GENERAL --- */}
                     {activeTab === 'general' && (
                     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-10">
+                        <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-6 md:p-10">
                             {/* Header Bagian */}
                             <div className="flex items-center gap-3 mb-8 border-b border-slate-50 pb-6">
                                 <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
@@ -209,11 +221,9 @@ export default function Index({ auth, settings }) {
 
                 {/* --- TAB 2: PREFERENCES & NOTIFICATIONS --- */}
                 {activeTab === 'notif' && (
-                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        
+                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">                        
                         {/* Section 1: Admin Alerts */}
-                        <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-10">
-                            <div className="flex items-center gap-3 mb-8 border-b border-slate-50 pb-6">
+                        <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-6 md:p-10">                            <div className="flex items-center gap-3 mb-8 border-b border-slate-50 pb-6">
                                 <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
                                     <Bell size={24}/>
                                 </div>
@@ -267,7 +277,7 @@ export default function Index({ auth, settings }) {
                                     title="Daily Sales Summary" 
                                     description="Kirim rekap penjualan harian ke email admin setiap jam 23:59."
                                     icon={<Mail size={20} className="text-purple-500" />}
-                                    checked={data.notif_email}
+                                    checked={data.notif_email|| false}
                                     onChange={val => setData('notif_email', val)}
                                 />
                             </div>
@@ -290,10 +300,8 @@ export default function Index({ auth, settings }) {
 
                 {/* --- TAB 3: PAYMENTS & SHIPPING (BARU) --- */}
                 {activeTab === 'payment' && (
-                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        {/* Bank Account Info */}
-                        <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-10">
-                            <div className="flex items-center gap-3 mb-8 border-b border-slate-50 pb-6">
+                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">                        {/* Bank Account Info */}
+                            <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-6 md:p-10">                            <div className="flex items-center gap-3 mb-8 border-b border-slate-50 pb-6">
                                 <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center"><Landmark size={24}/></div>
                                 <div>
                                     <h3 className="font-black text-slate-800">Bank Transfer Info</h3>
@@ -329,10 +337,19 @@ export default function Index({ auth, settings }) {
                 )}
 
                 {/* Save Button */}
-                <div className="mt-8 flex justify-end">
+                <div className="mt-12 flex flex-col-reverse md:flex-row items-center justify-end gap-4 pb-20">
                     <button disabled={processing} className="bg-slate-900 text-white px-12 py-5 rounded-[2rem] font-black text-lg hover:bg-blue-600 transition-all shadow-xl shadow-slate-200 flex items-center gap-3">
                         <Save size={22} />
                         {processing ? 'Saving...' : 'Update System'}
+                    </button>
+
+                    <button 
+                        type="button"
+                        onClick={handleReset}
+                        className="px-6 py-2.5 bg-rose-50 text-rose-600 rounded-2xl font-bold text-sm hover:bg-rose-100 transition-all border border-rose-200 flex items-center gap-2"
+                        >
+                        <RotateCcw size={18} /> {/* Import icon RotateCcw dari lucide-react */}
+                        Reset to Default
                     </button>
                 </div>
             </form>

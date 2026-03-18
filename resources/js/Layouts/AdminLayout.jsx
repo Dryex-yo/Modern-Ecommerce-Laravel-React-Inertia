@@ -13,7 +13,8 @@ import {
     AlertTriangle,
     Bell,
     ChevronRight,
-    Loader2
+    Loader2,
+    Menu,
 } from 'lucide-react';
 import { Link, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
@@ -28,6 +29,7 @@ export default function AdminLayout({ children, user }) {
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
     // Hitung total notifikasi
     const pendingOrders = notifications?.pending_orders_count || 0;
@@ -70,9 +72,16 @@ export default function AdminLayout({ children, user }) {
     };
     
     return (
-        <div className="flex min-h-screen bg-[#F8FAFC] p-6 font-sans text-slate-700">
+        <div className="min-h-screen bg-[#F8FAFC] flex">
             {/* --- SIDEBAR --- */}
-            <aside className="w-64 bg-white/70 backdrop-blur-xl rounded-[2.5rem] p-8 shadow-sm flex flex-col border border-white/50 fixed h-[calc(100vh-3rem)] z-40">
+            <aside className={`
+                        fixed top-6 bottom-6 z-50 transition-all duration-300
+                        w-[18rem] bg-white rounded-[2.5rem] p-8 shadow-sm flex flex-col border border-slate-100
+                        /* MOBILE: Sembunyikan ke kiri luar layar */
+                        ${isMobileMenuOpen ? 'left-6' : '-left-full'} 
+                        /* DESKTOP: Munculkan di posisi biasa */
+                        md:left-6 
+            `}>
                 <div className="flex items-center gap-3 mb-12">
                     <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center overflow-hidden shadow-lg">
                         {settings?.shop_logo ? (
@@ -134,16 +143,38 @@ export default function AdminLayout({ children, user }) {
             </div>
             </aside>
 
+            {/* --- OVERLAY UNTUK MOBILE --- */}
+            {isMobileMenuOpen && (
+                        <div 
+                            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 md:hidden"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                        />
+                )}
+
             {/* --- MAIN CONTENT AREA --- */}
-            <main className="flex-1 ml-[18rem]">
+            <main className={`
+                            flex-1 min-h-screen transition-all duration-300
+                            /* MOBILE: Tanpa margin kiri agar penuh */
+                            ml-0 p-4 
+                            /* DESKTOP: Beri margin kiri seukuran sidebar + gap */
+                            md:ml-[20rem] md:p-10
+                `}>
                 <header className="flex justify-between items-center mb-10">
-                    <div>
+                    {/* TOMBOL HAMBURGER UNTUK MOBILE */}
+                    <button 
+                        onClick={() => setIsMobileMenuOpen(true)}
+                        className="p-3 bg-white rounded-2xl shadow-sm border border-slate-100 md:hidden text-slate-600"
+                        >
+                        <Menu size={24} /> {/* Jangan lupa import Menu dari lucide-react */}
+                    </button>
+                    
+                    <div className="flex-1 md:block hidden ml-4">
                         <h2 className="text-3xl font-black text-slate-800 tracking-tight">
                             {getHeaderTitle()}
                         </h2>
                     </div>
                     
-                    <div className="flex items-center gap-5">
+                    <div className="flex items-center gap-3">
                         {/* --- SEARCH BAR --- */}
                         <div className="relative">
                             <div className="relative group">
@@ -287,7 +318,7 @@ export default function AdminLayout({ children, user }) {
                     </div>
                 </header>
 
-                <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <div className="max-w-full overflow-x-hidden">
                     {children}
                 </div>
             </main>

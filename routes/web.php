@@ -65,6 +65,8 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
     Route::get('/settings', [SettingController::class, 'index'])->name('settings.index');
     Route::post('/settings', [SettingController::class, 'store'])->name('settings.store');
+    Route::post('/admin/settings/reset', [SettingController::class, 'reset'])
+    ->name('settings.reset');
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
     Route::get('/reports', [ReportController::class, 'index'])->name('reports.index');
     Route::get('/reports/excel', [ReportController::class, 'exportExcel'])->name('reports.excel');
