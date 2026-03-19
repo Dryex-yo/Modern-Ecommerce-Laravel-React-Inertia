@@ -32,6 +32,14 @@ class HandleInertiaRequests extends Middleware
          */
         public function share(Request $request): array
         {
+            
+            $dbSettings = [];
+            try {
+                $dbSettings = \App\Models\Setting::pluck('value', 'key')->toArray();
+            } catch (\Exception $e) {
+                // Jika tabel belum ada atau error, biarkan kosong
+            }
+
             return [
                 ...parent::share($request),
                 
@@ -39,22 +47,11 @@ class HandleInertiaRequests extends Middleware
                     'user' => $request->user(),
                 ],
 
-                'settings' => function () {
-                    // 1. Ambil semua data dari database
-                    $dbSettings = \App\Models\Setting::pluck('value', 'key')->toArray();
-                    
-                    $logoPath = $dbSettings['shop_logo'] ?? null;
-                    $finalLogo = $logoPath ? asset('storage/' . $logoPath) : null;
-
-                    // 3. Gabungkan semua, tapi pastikan shop_logo menggunakan $finalLogo (URL lengkap)
-                    return array_merge([
-                        'shop_name' => Setting::get('shop_name'),
-                        'shop_email' => Setting::get('shop_email'),
-                        'shop_address' => Setting::get('shop_address'),
-                    ], $dbSettings, [
-                        'shop_logo' => $finalLogo // Ini akan menimpa data mentah di $dbSettings
-                    ]);
-                },
+                'settings' => [
+                    'shop_name' => $dbSettings['shop_name'] ?? 'DRYEX SHOP',
+                    'shop_logo' => isset($dbSettings['shop_logo']) ? asset('storage/' . $dbSettings['shop_logo']) : null,
+                    'shop_email' => $dbSettings['shop_email'] ?? null,
+                ],
 
                 // Ambil dari hasil closure settings di atas agar sinkron
                 'app_name' => function () {
@@ -70,6 +67,12 @@ class HandleInertiaRequests extends Middleware
                     'success' => fn () => $request->session()->get('success'),
                     'error' => fn () => $request->session()->get('error'),
                 ],
+
+                'cart_count' => function () use ($request) {
+                    if (!$request->user()) return 0;
+                    // Asumsi Anda punya tabel/model Cart
+                    return \App\Models\Cart::where('user_id', $request->user()->id)->sum('quantity');
+                },
             ];
         }
     }

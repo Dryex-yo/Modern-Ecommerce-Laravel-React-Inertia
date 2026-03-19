@@ -20,6 +20,7 @@ use App\Http\Controllers\Admin\GlobalSearchController;
 
 // --- GUEST ROUTES ---
 Route::get('/', function (Request $request) {
+    // Tetap catat visitor
     DB::table('visitors')->insert([
         'ip_address' => $request->ip(),
         'user_agent' => $request->userAgent(),
@@ -28,17 +29,28 @@ Route::get('/', function (Request $request) {
     ]);
 
     return Inertia::render('Welcome', [
-        'products' => Product::where('stock', '>', 0)->latest()->get(),
+        // Ambil 4-8 produk saja untuk "Highlight" agar landing page ngebut
+        'products' => Product::where('stock', '>', 0)->latest()->take(8)->get(),
         'canLogin' => Route::has('login'),
         'canRegister' => Route::has('register'),
     ]);
-});
+})->name('welcome');
+
+Route::get('/shop', function (Request $request) {
+    return Inertia::render('Shop/Index', [ // Kita buat folder Shop, file Index.jsx
+        'products' => Product::where('stock', '>', 0)->latest()->get(),
+    ]);
+})->name('shop.index');
 
 // --- AUTHENTICATED ROUTES (User & Admin) ---
 Route::middleware(['auth', 'verified'])->group(function () {
     // Dashboard Tunggal
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/shop/product/{id}', [ProductController::class, 'showCustomer'])->name('shop.product.show');
+    Route::get('/orders', function() {
+        return "Halaman Pesanan"; 
+    })->name('orders.index');
+    
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
