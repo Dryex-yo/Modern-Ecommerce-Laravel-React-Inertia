@@ -44,7 +44,7 @@ export default function Welcome({ auth, products }) {
 
     return (
         <>
-            <Head title={`Elevate Your Style | ${shopName}`} />
+            <Head title={`${shopName}`} />
             
             <div className="min-h-screen bg-[#FDFDFD] font-sans text-slate-900 selection:bg-blue-100 selection:text-blue-900">
                 {/* --- ULTRA THIN ANNOUNCEMENT BAR --- */}
@@ -55,18 +55,20 @@ export default function Welcome({ auth, products }) {
                 {/* --- GLASS NAVBAR --- */}
                 <nav className="flex justify-between items-center px-6 md:px-20 py-5 bg-white/80 backdrop-blur-xl sticky top-0 z-[100] border-b border-slate-100/50">
                     <Link href="/" className="flex items-center gap-3 group">
-                        <div className="relative w-11 h-11 bg-slate-900 rounded-2xl flex items-center justify-center text-white shadow-2xl transition-all duration-500 group-hover:bg-blue-600 group-hover:-rotate-12">
-                            <ShoppingBag size={22} strokeWidth={1.5} />
-                            <div className="absolute inset-0 bg-blue-400 blur-xl opacity-0 group-hover:opacity-30 transition-opacity"></div>
+                        <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-100 group-hover:scale-110 transition-transform overflow-hidden">
+                            {settings?.shop_logo ? (
+                                <img src={settings.shop_logo} alt="Logo" className="w-full h-full object-cover" />
+                            ) : (
+                                <ShoppingCart size={20} strokeWidth={2.5} />
+                            )}
                         </div>
-                        <div className="flex flex-col">
-                            <span className="font-black text-xl tracking-tighter text-slate-900 leading-none">
-                                {shopName.toUpperCase()}
+                        <h1 className="font-black text-xl tracking-tighter text-slate-800 uppercase">
+                            {shopName.split(' ')[0]}
+                            <span className="text-blue-600">
+                                {shopName.includes(' ') ? ` ${shopName.split(' ').slice(1).join(' ')}` : '.'}
                             </span>
-                            <span className="text-[9px] font-black text-blue-600 tracking-[0.3em] mt-0.5 uppercase">Premium Store</span>
-                        </div>
+                        </h1>
                     </Link>
-
                     {/* Minimalist Search Bar */}
                     <div className="hidden lg:flex flex-1 max-w-lg mx-12 relative group">
                         <Search className="absolute left-5 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={16} />
@@ -91,7 +93,7 @@ export default function Welcome({ auth, products }) {
                                     )}
                                 </Link>
                                 <Link href={route('dashboard')} className="flex items-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-full font-bold text-[11px] tracking-widest hover:bg-blue-600 hover:shadow-xl hover:shadow-blue-200 transition-all active:scale-95 uppercase">
-                                    Account
+                                    Dashboard
                                 </Link>
                                 <button onClick={handleLogout} className="p-3 text-slate-400 hover:text-red-500 transition-colors">
                                     <LogOut size={20} />
@@ -107,21 +109,29 @@ export default function Welcome({ auth, products }) {
                 </nav>
 
                 {/* --- MINIMALIST HERO --- */}
-                <header className="relative px-6 py-32 md:py-48 flex flex-col items-center text-center overflow-hidden">
-                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-50/40 via-transparent to-transparent -z-10"></div>
+                <header className="relative px-6 py-12 md:py-16 flex flex-col items-center text-center overflow-hidden border-b border-slate-50">                    <div className="absolute top-0 left-1/2 -translate-x-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-blue-50/40 via-transparent to-transparent -z-10"></div>
                     
                     <div className="relative z-10 max-w-4xl">
-                        <div className="inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-5 py-2 rounded-full mb-10 border border-blue-100">
+                        <div className="animate-bounce inline-flex items-center gap-2 bg-blue-50 text-blue-700 px-5 py-2 rounded-full mb-10 border border-blue-100">
                             <Sparkles size={14} className="animate-pulse" />
                             <span className="text-[10px] font-black uppercase tracking-[0.2em]">New Season 2026</span>
                         </div>
-                        <h2 className="text-7xl md:text-[110px] font-black text-slate-900 leading-[0.85] tracking-tighter mb-12 italic">
-                            REDEFINE <br />
-                            <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">LIMITLESS</span>
+                    {/* OPTIMIZED TYPOGRAPHY & SPACING */}
+                    <div className="flex flex-col items-center gap-4">
+                        <h2 className="text-7xl md:text-[100px] font-black text-slate-900 leading-[0.9] tracking-tighter italic">
+                            REDEFINE
                         </h2>
-                        <p className="text-slate-500 text-lg md:text-xl font-medium max-w-2xl mx-auto leading-relaxed mb-12">
-                            Explore the fusion of contemporary aesthetics and unparalleled comfort in our latest collection.
-                        </p>
+                        
+                        {/* 4. GRADIENT TYPOGRAPHY (Limitless) */}
+                        <h2 className="text-7xl md:text-[100px] font-black leading-[0.9] tracking-tighter italic text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600 transition-colors duration-500 hover:from-indigo-600 hover:to-blue-600">
+                            LIMITLESS
+                        </h2>
+                    </div>
+
+                    {/* Deskripsi */}
+                    <p className="text-slate-500 text-lg md:text-xl font-medium max-w-xl mx-auto leading-relaxed border-l-4 border-blue-50 pl-6 shadow-blue-50/50 shadow-inner">
+                        Explore the fusion of contemporary aesthetics and unparalleled comfort in our latest collection.
+                    </p>
                         <div className="flex flex-wrap justify-center gap-6">
                             <Link 
                                 href={route('shop.index')} 

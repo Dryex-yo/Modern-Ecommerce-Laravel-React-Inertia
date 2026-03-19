@@ -67,8 +67,8 @@ export default function Index({ auth, salesChartData, stats }) {
                 </div>
 
                 {/* Wadah Grafik yang Responsif */}
-                <div className="h-96 w-full">
-                    <ResponsiveContainer width="100%" height="100%">
+                <div className="w-full min-h-[384px]">
+                    <ResponsiveContainer width="100%" height={384}>
                         <AreaChart
                             data={salesChartData}
                             margin={{ top: 10, right: 30, left: 0, bottom: 0 }}

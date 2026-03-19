@@ -13,6 +13,7 @@ use App\Http\Controllers\ProductController;
 use App\Http\Controllers\CartController;
 use App\Http\Controllers\Admin\AnalyticsController;
 use App\Http\Controllers\Admin\OrderController;
+use App\Http\Controllers\Admin\AdminOrderController;
 use App\Http\Controllers\Admin\SettingController;
 use App\Http\Controllers\Admin\TransactionController;
 use App\Http\Controllers\Admin\ReportController;
@@ -47,10 +48,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // Dashboard Tunggal
     Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     Route::get('/shop/product/{id}', [ProductController::class, 'showCustomer'])->name('shop.product.show');
-    Route::get('/orders', function() {
-        return "Halaman Pesanan"; 
-    })->name('orders.index');
-    
+    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{order}', [OrderController::class, 'show'])->name('orders.show');    
 
     // Profile
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
@@ -77,9 +76,9 @@ Route::middleware(['auth', 'admin'])->prefix('admin')->group(function () {
     Route::get('/api/search', [GlobalSearchController::class, 'search'])->name('api.search');
     
     // Order Management
-    Route::get('/orders', [OrderController::class, 'index'])->name('orders.index');
-    Route::get('/orders/{id}', [OrderController::class, 'show'])->name('orders.show');
-
+    Route::get('/orders', [AdminOrderController::class, 'index'])->name('orders.index');
+    Route::get('/orders/{order}', [AdminOrderController::class, 'show'])->name('orders.show');
+    Route::patch('/orders/{order}', [AdminOrderController::class, 'update'])->name('orders.update');
     // Analytics, Settings, Transaction & Report
     Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
     
