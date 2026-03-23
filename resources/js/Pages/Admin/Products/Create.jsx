@@ -2,11 +2,11 @@ import AdminLayout from '@/Layouts/AdminLayout';
 import React, { useState } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
 
-export default function Create({ auth }) {
+export default function Create({ auth, categories }) {
     // Menggunakan helper useForm dari Inertia untuk handle input
     const { data, setData, post, processing, errors } = useForm({
         name: '',
-        category: '',
+        category_id: '',
         price: '',
         stock: '',
         description: '',
@@ -37,12 +37,13 @@ export default function Create({ auth }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
-        post(route('products.store'), {
+        post(route('admin.products.store'), {
             forceFormData: true,
-            onSuccess: () => alert('Produk Berhasil Disimpan!'),
-            onError: (errors) => console.log("Error Server:", errors),
-
-            });
+            preserveScroll: true,
+            onSuccess: () => {
+                window.location.href = route('admin.products.index');
+            },
+        });
     };
 
     return (
@@ -71,14 +72,16 @@ export default function Create({ auth }) {
                         <div>
                             <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Category</label>
                             <select 
-                                value={data.category}
-                                onChange={e => setData('category', e.target.value)}
+                                value={data.category_id}
+                                onChange={e => setData('category_id', e.target.value)}
                                 className="w-full px-5 py-3 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-blue-50"
                             >
                                 <option value="">Select Category</option>
-                                <option value="Shoes">Shoes</option>
-                                <option value="Electronics">Electronics</option>
-                                <option value="Apparel">Apparel</option>
+                                {categories.map(cat => (
+                                    <option key={cat.id} value={cat.id}>
+                                        {cat.name}
+                                    </option>
+                                ))}
                             </select>
                         </div>
                         <div>

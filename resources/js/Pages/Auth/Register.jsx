@@ -1,3 +1,4 @@
+import ApplicationLogo from '@/Components/ApplicationLogo';
 import { useEffect } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ShoppingBag, Lock, Mail, User, ArrowRight, ShieldCheck } from 'lucide-react';
@@ -34,8 +35,8 @@ export default function Register() {
             <div className="w-full max-w-[460px] relative z-10">
                 {/* --- LOGO SECTION --- */}
                 <div className="text-center mb-10">
-                    <div className="inline-flex w-16 h-16 bg-blue-600 rounded-[1.8rem] items-center justify-center text-white shadow-2xl shadow-blue-200 mb-6 group hover:rotate-6 transition-transform">
-                        <ShoppingBag size={32} />
+                    <div className="flex justify-center mb-6">
+                        <ApplicationLogo className="flex-col !gap-4" />
                     </div>
                     <h1 className="text-3xl font-black text-slate-900 tracking-tighter leading-tight">Mulai Belanja</h1>
                     <p className="text-slate-400 font-bold text-[10px] uppercase tracking-[0.25em] mt-3">Buat akun DRYEX SHOP Anda sekarang</p>

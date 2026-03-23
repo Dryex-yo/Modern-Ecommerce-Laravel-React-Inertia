@@ -15,14 +15,6 @@ return new class extends Migration
             $table->text('description')->nullable();
             $table->timestamps();
         });
-
-        // Update tabel products agar punya category_id
-        // Jika tabel products sudah ada, kita tambahkan kolomnya di sini atau buat migration baru
-        Schema::table('products', function (Blueprint $table) {
-            if (!Schema::hasColumn('products', 'category_id')) {
-                $table->foreignId('category_id')->nullable()->constrained()->onDelete('set null');
-            }
-        });
     }
 
     public function down(): void

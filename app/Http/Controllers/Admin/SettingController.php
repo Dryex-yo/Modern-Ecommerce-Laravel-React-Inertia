@@ -8,7 +8,6 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Inertia\Inertia;
 
-
 class SettingController extends Controller
 {
     public function index()
@@ -16,18 +15,27 @@ class SettingController extends Controller
         // Ambil semua setting dan ubah jadi format key => value
         $dbSettings = Setting::pluck('value', 'key')->toArray();
 
-        // Gabungkan dengan default values agar toggle di React punya nilai awal
+        // Gabungkan dengan default values
         $settings = array_merge([
-            'shop_name'        => 'DRYEX SHOP',
-            'shop_email'       => 'admin@dryex.com',
-            'notif_orders'     => '1', // Default ON (disimpan sebagai string '1' atau '0')
-            'notif_stock'      => '1', // Default ON
-            'notif_email'      => '0', // Default OFF
-            'notif_sound'      => '1', // Default ON
-            'currency_symbol'  => 'Rp',
+            'shop_name'       => 'DRYEX SHOP',
+            'shop_email'      => 'admin@dryex.com',
+            'shop_logo'       => null,
+            'notif_orders'    => '1',
+            'notif_stock'     => '1',
+            'notif_email'     => '0',
+            'notif_sound'     => '1',
+            'currency_symbol' => 'Rp',
+            'shop_address'    => '',
         ], $dbSettings);
 
-        return Inertia::render('Admin/Settings/Index');
+        // Penting: Ubah path logo menjadi URL yang bisa diakses browser
+        if ($settings['shop_logo'] && !str_starts_with($settings['shop_logo'], 'http')) {
+            $settings['shop_logo'] = asset('storage/' . $settings['shop_logo']);
+        }
+
+        return Inertia::render('Admin/Settings/Index', [
+            'settings' => $settings
+        ]);
     }
 
     public function store(Request $request)
@@ -42,61 +50,62 @@ class SettingController extends Controller
             'notif_email'  => 'nullable',
             'notif_sound'  => 'nullable',
             'shop_address' => 'nullable|string',
+            'bank_name'          => 'nullable|string',
+            'bank_holder'        => 'nullable|string',
+            'bank_account'       => 'nullable|string',
+            'shipping_origin'    => 'nullable|string',
+            'shipping_flat_rate' => 'nullable|numeric',
         ]);
 
-        // 2. Handle Logo secara terpisah
+        // 2. Handle Logo (Hapus yang lama jika upload baru)
         if ($request->hasFile('shop_logo')) {
+            $oldLogo = Setting::where('key', 'shop_logo')->value('value');
+            if ($oldLogo) {
+                Storage::disk('public')->delete($oldLogo);
+            }
+
             $path = $request->file('shop_logo')->store('settings', 'public');
             Setting::updateOrCreate(['key' => 'shop_logo'], ['value' => $path]);
         }
 
-        // 3. Hapus shop_logo dari array $data agar tidak ikut masuk ke loop
+        // Hapus shop_logo dari array agar tidak bentrok di loop bawah
         unset($data['shop_logo']);
 
-        // 4. Simpan semua data lainnya
+        // 3. Simpan data lainnya secara massal
         foreach ($data as $key => $value) {
-            // Konversi boolean ke string '1' atau '0'
-            $finalValue = is_bool($value) ? ($value ? '1' : '0') : $value;
+            // Inertia sering mengirim boolean, kita paksa jadi '1' atau '0' untuk DB
+            if (in_array($key, ['notif_orders', 'notif_stock', 'notif_email', 'notif_sound'])) {
+                $finalValue = filter_var($value, FILTER_VALIDATE_BOOLEAN) ? '1' : '0';
+            } else {
+                $finalValue = $value;
+            }
 
             Setting::updateOrCreate(
-                ['key' => $key], // Gunakan variabel $key dari loop
-                ['value' => $finalValue] // Gunakan nilai asli dari input
+                ['key' => $key],
+                ['value' => $finalValue ?? '']
             );
         }
 
-        return back()->with('success', 'Settings & Preferences updated successfully!');
+        return back()->with('success', 'Pengaturan berhasil diperbarui!');
     }
 
-    public function update(Request $request)
-    {
-        $inputs = $request->except(['_token', 'shop_logo']);
-        
-        foreach ($inputs as $key => $value) {
-        // UpdateOrCreate akan membuat record baru jika key belum ada
-        \App\Models\Setting::updateOrCreate(
-            ['key' => $key],
-            ['value' => $value ?? ''] // Pastikan tidak null agar tidak error di DB
-        );
-
-        return redirect()->back()->with('success', 'Pengaturan pembayaran dan pengiriman diperbarui!');
-        }
-    }
-
+    // Fungsi reset untuk mengembalikan ke setelan pabrik
     public function reset()
     {
-        // 1. Ambil nama file logo lama
-        $oldLogo = Setting::where('key', 'shop_logo')->value('value');
-
-        // 2. Hapus file fisik dari storage jika ada
-        if ($oldLogo && Storage::disk('public')->exists($oldLogo)) {
-            Storage::disk('public')->delete($oldLogo);
+        $keysToReset = ['shop_logo', 'shop_name', 'shop_email', 'notif_orders', 'notif_stock'];
+        
+        foreach ($keysToReset as $key) {
+            if ($key === 'shop_logo') {
+                $oldLogo = Setting::where('key', 'shop_logo')->value('value');
+                if ($oldLogo) Storage::disk('public')->delete($oldLogo);
+                Setting::updateOrCreate(['key' => $key], ['value' => null]);
+            } else {
+                // Beri nilai default
+                $default = $key === 'shop_name' ? 'DRYEX SHOP' : ($key === 'shop_email' ? 'admin@dryex.com' : '1');
+                Setting::updateOrCreate(['key' => $key], ['value' => $default]);
+            }
         }
 
-        // 3. Reset nilai ke default atau kosongkan
-        Setting::where('key', 'shop_logo')->update(['value' => null]);
-        Setting::where('key', 'shop_name')->update(['value' => 'DRYEX SHOP']);
-        Setting::where('key', 'shop_email')->update(['value' => 'admin@dryex.com']);
-
-        return redirect()->back()->with('success', 'Settings have been reset to default.');
+        return redirect()->back()->with('success', 'Pengaturan telah direset ke default.');
     }
 }

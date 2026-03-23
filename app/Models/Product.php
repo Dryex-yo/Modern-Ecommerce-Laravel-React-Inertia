@@ -16,7 +16,7 @@ class Product extends Model
         'price', 
         'stock', 
         'image', 
-        'category'
+        'category_id'
     ];
 
     public function images(): \Illuminate\Database\Eloquent\Relations\HasMany

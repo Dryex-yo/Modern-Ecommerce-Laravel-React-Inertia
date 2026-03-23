@@ -1,3 +1,4 @@
+import ApplicationLogo from '@/Components/ApplicationLogo';
 import { useEffect } from 'react';
 import { Head, Link, useForm } from '@inertiajs/react';
 import { ShoppingBag, Lock, Mail, ArrowRight } from 'lucide-react';
@@ -31,11 +32,14 @@ export default function Login({ status, canResetPassword }) {
             <div className="w-full max-w-[440px] relative z-10">
                 {/* Logo Section */}
                 <div className="text-center mb-10">
-                    <div className="inline-flex w-16 h-16 bg-blue-600 rounded-[1.5rem] items-center justify-center text-white shadow-2xl shadow-blue-200 mb-6">
-                        <ShoppingBag size={32} />
+                    <div className="flex justify-center mb-6">
+                        <ApplicationLogo className="flex-col !gap-4" />
                     </div>
+                    
                     <h1 className="text-3xl font-black text-slate-900 tracking-tight">Selamat Datang</h1>
-                    <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-2">Masuk untuk melanjutkan belanja</p>
+                    <p className="text-slate-400 font-bold text-xs uppercase tracking-widest mt-2">
+                        Masuk untuk melanjutkan belanja
+                    </p>
                 </div>
 
                 <div className="bg-white/80 backdrop-blur-xl p-10 rounded-[2.5rem] border border-white shadow-[0_20px_50px_rgba(0,0,0,0.05)]">

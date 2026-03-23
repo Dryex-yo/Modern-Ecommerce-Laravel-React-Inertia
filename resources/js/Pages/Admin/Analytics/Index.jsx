@@ -1,15 +1,26 @@
 import React from 'react';
 import AdminLayout from '@/Layouts/AdminLayout';
-import { Head } from '@inertiajs/react';
+import { Head, router } from '@inertiajs/react';
 import { DollarSign, ShoppingCart, TrendingUp, BarChart3 } from 'lucide-react';
 // Import komponen-komponen yang dibutuhkan dari Recharts
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-export default function Index({ auth, salesChartData, stats }) {
+export default function Index({ auth, salesChartData, stats, filters }) {
     
     // Helper untuk format mata uang Rupiah
     const formatRupiah = (value) => {
         return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(value);
+    };
+
+    const handleFilterChange = (e) => {
+        router.get(route('admin.analytics.index'), 
+            { range: e.target.value }, 
+            { 
+                preserveState: true, 
+                preserveScroll: true,
+                replace: true 
+            }
+        );
     };
 
     return (
@@ -60,9 +71,17 @@ export default function Index({ auth, salesChartData, stats }) {
             <div className="bg-white p-10 rounded-[3rem] shadow-sm border border-slate-100">
                 <div className="flex justify-between items-center mb-8">
                     <h3 className="text-xl font-bold text-slate-800">Tren Pendapatan Bulanan</h3>
-                    <select className="bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-600 px-5 py-3 focus:ring-2 focus:ring-blue-100 cursor-pointer">
-                        <option>6 Bulan Terakhir</option>
-                        <option>Tahun Ini</option>
+                    <select 
+                        value={filters?.range || '30days'} 
+                        onChange={handleFilterChange}
+                        className="bg-slate-50 border-none rounded-xl text-sm font-bold text-slate-600 px-5 py-3 focus:ring-2 focus:ring-blue-100 cursor-pointer"
+                    >
+                        <option value="7days">7 Hari Terakhir</option>
+                        <option value="30days">30 Hari Terakhir</option>
+                        <option value="90days">90 Hari Terakhir</option>
+                        <option value="6months">6 Bulan Terakhir</option>
+                        <option value="thisyear">Tahun Ini</option>
+                        <option value="all">Semua Waktu</option>
                     </select>
                 </div>
 

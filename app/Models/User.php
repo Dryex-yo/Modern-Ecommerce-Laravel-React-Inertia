@@ -2,22 +2,22 @@
 
 namespace App\Models;
 
-use App\Models\Order;
-use Database\Factories\UserFactory;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Illuminate\Database\Eloquent\Relations\HasMany;
+use Illuminate\Contracts\Auth\MustVerifyEmail;
 
 class User extends Authenticatable
 {
-    /** @use HasFactory<UserFactory> */
+    /** @use HasFactory<\Database\Factories\UserFactory> */
     use HasFactory, Notifiable;
 
     protected $fillable = [
         'name',
         'email',
         'password',
+        'role', // PENTING: Tambahkan ini agar role bisa diisi
     ];
 
     protected $hidden = [
@@ -33,9 +33,19 @@ class User extends Authenticatable
         ];
     }
 
-    /** --- TAMBAHKAN INI --- **/
+    /**
+     * Relasi ke model Order.
+     */
     public function orders(): HasMany
     {
-        return $this->hasMany(\App\Models\Order::class);
+        return $this->hasMany(Order::class);
+    }
+
+    /**
+     * Cek apakah user memiliki role admin.
+     */
+    public function isAdmin(): bool
+    {
+        return $this->role === 'admin';
     }
 }

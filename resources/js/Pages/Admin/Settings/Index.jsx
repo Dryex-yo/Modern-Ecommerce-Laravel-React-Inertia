@@ -11,7 +11,7 @@ import {
 export default function Index({ auth, settings }) {
     const [activeTab, setActiveTab] = useState('general');
 
-    const { data, setData, post, processing } = useForm({
+    const { data, setData, post, processing, errors } = useForm({
         // General
         shop_name: settings.shop_name || '',
         shop_logo: null,
@@ -35,18 +35,25 @@ export default function Index({ auth, settings }) {
         e.preventDefault();
         
         // Gunakan forceFormData: true jika dirasa file tidak terkirim
-        post(route('settings.store'), {
-            forceFormData: true,
-            onSuccess: () => {
-                // Bersihkan preview setelah berhasil
-                setData('shop_logo_preview', null);
+        post(route('admin.settings.store'), {
+        forceFormData: true, // Wajib true karena ada upload file (shop_logo)
+        onSuccess: () => {
+                // Jika ada preview logo, kita bersihkan
+                if (data.shop_logo_preview) {
+                    URL.revokeObjectURL(data.shop_logo_preview);
+                    setData('shop_logo_preview', null);
+                }
+                alert('Settings updated successfully!');
             },
+            onError: (errors) => {
+                console.log(errors);
+            }
         });
     };
 
     const handleReset = () => {
         if (confirm('Are you sure you want to reset all settings to default? This will delete your current logo.')) {
-            router.post(route('settings.reset'), {}, {
+            router.post(route('admin.settings.reset'), {}, {
                 onSuccess: () => {
                     // Beri notifikasi jika perlu
                     console.log('Reset success');
@@ -58,6 +65,11 @@ export default function Index({ auth, settings }) {
     return (
         <AdminLayout user={auth.user}>
             <Head title="System Settings" />
+            {Object.keys(errors).length > 0 && (
+                <div className="bg-red-50 text-red-500 p-4 rounded-2xl mb-4 text-xs font-bold">
+                    {JSON.stringify(errors)}
+                </div>
+            )}
 
             <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
                 <div>
@@ -330,11 +342,11 @@ export default function Index({ auth, settings }) {
 
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <InputField label="Kota Asal Pengiriman" value={data.shipping_origin} onChange={v => setData('shipping_origin', v)} placeholder="Contoh: Jakarta Selatan" />
-                                <InputField label="Biaya Ongkir Flat (Rp)" value={data.shipping_flat_rate} onChange={v => setData('shipping_flat_rate', v)} placeholder="Contoh: 10000" />
+                                <InputField label="Biaya Ongkir Flat (Rp)" value={data.shipping_flat_rate} onChange={v => setData('shipping_flat_rate', v)} placeholder="Contoh: 10000 (Hanya angka)" />
                             </div>
                         </div>
                     </div>
-                )}
+                )}  
 
                 {/* Save Button */}
                 <div className="mt-12 flex flex-col-reverse md:flex-row items-center justify-end gap-4 pb-20">

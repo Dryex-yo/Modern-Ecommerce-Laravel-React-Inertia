@@ -1,16 +1,16 @@
 <?php
 
-namespace App\Http\Controllers;
+namespace App\Http\Controllers\Admin;
 
+use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
-use Illuminate\Support\Facades\Auth; 
 
 class OrderController extends Controller
 {
-    public function index(Request $request) 
+    public function index(Request $request)
     {
-        // Pake $request->user() lebih disukai VS Code dan lebih aman
+        // Ambil order hanya milik user yang login + gambar produknya
         $orders = $request->user()->orders()
             ->with(['items.product'])
             ->latest()
@@ -21,10 +21,11 @@ class OrderController extends Controller
         ]);
     }
 
-    public function show(Request $request, $id) // <-- Tambahkan Request
+    public function show(Request $request, $id)
     {
+        // Pastikan user tidak bisa ngintip order orang lain via URL
         $order = $request->user()->orders()
-            ->with(['items.product']) // Sesuaikan relasi (cek apakah shipping_address ada di model)
+            ->with(['items.product'])
             ->findOrFail($id);
 
         return Inertia::render('Order/Show', [

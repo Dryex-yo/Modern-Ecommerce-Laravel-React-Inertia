@@ -4,11 +4,7 @@ export default function ApplicationLogo({ className = '', ...props }) {
     // Ambil data settings dari Shared Data Inertia
     const { settings } = usePage().props;
 
-    /** * SESUAIKAN DENGAN KODE ADMIN KAMU:
-     * Logo: settings.shop_logo
-     * Nama: settings.shop_name
-     */
-    const logoUrl = settings?.shop_logo ? `/storage/${settings.shop_logo}` : null;
+    const logoUrl = settings?.shop_logo;
     const shopName = settings?.shop_name || 'DRYEX SHOP';
 
     return (
@@ -16,7 +12,7 @@ export default function ApplicationLogo({ className = '', ...props }) {
             {logoUrl ? (
                 <img 
                     // Gunakan template literal yang benar
-                    src={settings.shop_logo.startsWith('http') ? settings.shop_logo : `/storage/${settings.shop_logo}`} 
+                    src={logoUrl} 
                     alt={shopName} 
                     className="h-9 w-auto object-contain" 
                     onError={(e) => {

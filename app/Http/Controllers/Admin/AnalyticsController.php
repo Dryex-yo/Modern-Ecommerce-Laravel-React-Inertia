@@ -10,44 +10,65 @@ use Inertia\Inertia;
 
 class AnalyticsController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        // 1. Data Dasar
-        $completedOrders = Order::where('status', 'completed');
-        $totalOrders = $completedOrders->count();
-        $totalVisitors = DB::table('visitors')->count();
+        // Ambil input range, default ke 30days agar lebih update
+        $range = $request->input('range', '30days');
 
-        // 2. Hitung Conversion Rate
-        $conversionRate = $totalVisitors > 0 
-            ? round(($totalOrders / $totalVisitors) * 100, 1) 
-            : 0;
+        $query = Order::where('status', 'completed');
 
-        // 3. Hitung Pendapatan
-        $totalRevenue = (float) $completedOrders->sum('total_price');
+        // Tentukan filter waktu berdasarkan pilihan
+        $startDate = match ($range) {
+            '7days'   => now()->subDays(7),
+            '30days'  => now()->subDays(30),
+            '90days'  => now()->subDays(90),
+            '6months' => now()->subMonths(6),
+            'thisyear'=> now()->startOfYear(),
+            'all'     => null, // Tidak ada filter tanggal
+            default   => now()->subDays(30),
+        };
+
+        if ($startDate) {
+            $query->where('created_at', '>=', $startDate);
+        }
+
+        // --- HITUNG STATS ---
+        $totalOrders = (clone $query)->count();
+        $totalVisitors = DB::table('visitors')->distinct('ip_address')->count('ip_address');
+        $totalRevenue = (float) (clone $query)->sum('total_price');
+        
 
         $stats = [
             'total_revenue'   => $totalRevenue,
-            'avg_order_value' => (float) ($completedOrders->avg('total_price') ?? 0),
-            'conversion_rate' => $conversionRate,
-            'gross_profit'    => $totalRevenue * 0.2, // Margin 20%
+            'avg_order_value' => $totalOrders > 0 ? $totalRevenue / $totalOrders : 0,
+            'conversion_rate' => $totalVisitors > 0 ? round(($totalOrders / $totalVisitors) * 100, 1) : 0,
+            'gross_profit'    => $totalRevenue * 0.2,
             'total_visitors'  => $totalVisitors
         ];
 
-        // 4. Data Chart Bulanan (Format untuk Recharts)
-        $salesChartData = Order::where('status', 'completed')
+        // --- DATA CHART ---
+        // Atur format tanggal di sumbu X agar sesuai dengan range yang dipilih
+        $dateFormat = match ($range) {
+            '7days', '30days' => '%d %b',      // Contoh: 23 Mar
+            '90days', '6months' => '%b %y',   // Contoh: Mar 26
+            'thisyear', 'all' => '%b',        // Contoh: Jan, Feb
+            default => '%d %b',
+        };
+
+        $salesChartData = (clone $query)
             ->select(
-                DB::raw('DATE_FORMAT(created_at, "%b") as name'),
-                DB::raw('CAST(SUM(total_price) AS UNSIGNED) as revenue')
+                DB::raw("DATE_FORMAT(created_at, '$dateFormat') as name"),
+                DB::raw('CAST(SUM(total_price) AS UNSIGNED) as revenue'),
+                DB::raw('MIN(created_at) as sort_date') // Untuk sorting yang akurat
             )
-            ->whereYear('created_at', date('Y')) // Hanya tahun ini
-            ->groupBy('name', DB::raw('MONTH(created_at)'))
-            ->orderBy(DB::raw('MONTH(created_at)'))
+            ->groupBy('name')
+            ->orderBy('sort_date')
             ->get();
 
-        // Pastikan path render sesuai dengan folder di resources/js/Pages/
         return Inertia::render('Admin/Analytics/Index', [
             'salesChartData' => $salesChartData,
             'stats' => $stats,
+            'filters' => ['range' => $range]
         ]);
     }
 }

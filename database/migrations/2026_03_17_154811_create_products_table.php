@@ -12,16 +12,21 @@ return new class extends Migration
     public function up(): void
     {
         Schema::create('products', function (Blueprint $table) {
-                $table->id();
-                $table->string('name');             // Nama barang
-                $table->string('slug')->unique();   // URL ramah SEO (misal: sepatu-nike-pro)
-                $table->text('description')->nullable(); // Penjelasan produk
-                $table->decimal('price', 12, 2);    // Harga (mendukung hingga miliaran)
-                $table->integer('stock')->default(0); // Stok barang
-                $table->string('image')->nullable(); // Nama file gambar
-                $table->string('category')->nullable(); // Kategori (Elektronik, Baju, dll)
-                $table->timestamps();     
-                $table->boolean('is_featured')->default(false)->after('price');          // Mencatat waktu dibuat & diupdate
+                    $table->id();
+                    $table->string('name');
+                    $table->string('slug')->unique();
+                    $table->text('description')->nullable();
+                    $table->decimal('price', 12, 2);
+
+                    $table->boolean('is_featured')->default(false);
+
+                    $table->integer('stock')->default(0);
+                    $table->string('image')->nullable();
+
+                    // 🔥 RELASI YANG BENAR
+                    $table->foreignId('category_id')->nullable()->constrained()->nullOnDelete();
+
+                    $table->timestamps();       // Mencatat waktu dibuat & diupdate
             });
     }
 

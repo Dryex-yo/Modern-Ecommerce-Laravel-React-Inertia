@@ -41,8 +41,9 @@ class RegisteredUserController extends Controller
             'name' => $request->name,
             'email' => $request->email,
             'password' => Hash::make($request->password),
-            'role' => 'user', // Paksa jadi user biasa
+            'role' => 'user',
         ]);
+        $user->sendEmailVerificationNotification();
 
         event(new Registered($user));
 

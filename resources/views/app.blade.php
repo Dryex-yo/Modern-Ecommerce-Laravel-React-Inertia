@@ -12,7 +12,7 @@
                     : asset('');
         @endphp
 
-        <title inertia>{{ $settings->shop_name ?? config('app.name') }}</title>        <link rel="icon" type="image/png" href="{{ $shopLogo }}?v={{ time() }}">
+        <title inertia>{{ $settings->shop_name ?? config('app.name') }}</title>        
         <link rel="icon" type="image/png" href="{{ $shopLogo }}?v={{ time() }}">
         <link rel="apple-touch-icon" href="{{ $shopLogo }}?v={{ time() }}">
 

@@ -1,42 +1,26 @@
 import React, { useState, useEffect } from 'react';
 import SidebarItem from '@/Components/SidebarItem';
 import { 
-    LayoutGrid, 
-    Package, 
-    ShoppingCart, 
-    LogOut,
-    BarChart3,
-    Receipt,
-    FileText,
-    Settings,
-    Search,
-    AlertTriangle,
-    Bell,
-    ChevronRight,
-    Loader2,
-    Menu,
+    LayoutGrid, Package, ShoppingCart, LogOut, BarChart3,
+    Receipt, FileText, Settings, Search, AlertTriangle,
+    Bell, ChevronRight, Loader2, Menu, Users, Layers
 } from 'lucide-react';
 import { Link, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
 
-
 export default function AdminLayout({ children, user }) {
-    // Destructuring sekaligus dari usePage
     const { notifications, settings } = usePage().props;
-    const logoUrl = settings?.shop_logo || '/default-logo.png';
-    
-    // State untuk Search
     const [searchTerm, setSearchTerm] = useState('');
     const [searchResults, setSearchResults] = useState([]);
     const [isSearching, setIsSearching] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    // Hitung total notifikasi
+    // Notifikasi logic
     const pendingOrders = notifications?.pending_orders_count || 0;
     const lowStock = notifications?.low_stock_count || 0;
     const totalNotif = pendingOrders + lowStock;
 
-    // Logic untuk Global Search
+    // Global Search Debounce
     useEffect(() => {
         const delayDebounceFn = setTimeout(() => {
             if (searchTerm.trim().length > 2) {
@@ -50,8 +34,7 @@ export default function AdminLayout({ children, user }) {
             } else {
                 setSearchResults([]);
             }
-        }, 300); // Tunggu 300ms setelah user berhenti mengetik
-
+        }, 300);
         return () => clearTimeout(delayDebounceFn);
     }, [searchTerm]);
     
@@ -61,155 +44,131 @@ export default function AdminLayout({ children, user }) {
     };
 
     const getHeaderTitle = () => {
-    if (route().current('admin.products.*')) return 'Products Management';
-    if (route().current('admin.orders.*')) return 'Customer Orders';
-    if (route().current('admin.analytics.*')) return 'Business Analytics';
-    if (route().current('admin.transactions.*')) return 'Transaction Logs';
-    if (route().current('admin.reports.*')) return 'Financial Reports';
-    if (route().current('admin.settings.*')) return 'System Settings';
-    if (route().current('admin.dashboard')) return 'Dashboard Overview';
-    return 'Admin Panel';;
+        const currentRoute = route().current();
+        if (currentRoute.includes('users')) return 'User Management';
+        if (currentRoute.includes('products')) return 'Inventory Gallery';
+        if (currentRoute.includes('orders')) return 'Customer Orders';
+        if (currentRoute.includes('analytics')) return 'Performance Metrics';
+        if (currentRoute.includes('categories')) return 'Product Categories';
+        if (currentRoute.includes('transactions')) return 'Financial Logs';
+        if (currentRoute.includes('reports')) return 'Business Reports';
+        if (currentRoute.includes('settings')) return 'System Configuration';
+        if (currentRoute.includes('dashboard')) return 'Dashboard Overview';
+        return 'Admin Control';
     };
     
     return (
-        <div className="min-h-screen bg-[#F8FAFC] flex">
-            {/* --- SIDEBAR --- */}
+        <div className="min-h-screen bg-[#F8FAFC] flex font-sans selection:bg-blue-100 selection:text-blue-700">
+            {/* --- 1. SIDEBAR --- */}
             <aside className={`
-                        fixed top-6 bottom-6 z-50 transition-all duration-300
-                        w-[18rem] bg-white rounded-[2.5rem] p-8 shadow-sm flex flex-col border border-slate-100
-                        /* MOBILE: Sembunyikan ke kiri luar layar */
-                        ${isMobileMenuOpen ? 'left-6' : '-left-full'} 
-                        /* DESKTOP: Munculkan di posisi biasa */
-                        md:left-6 
+                fixed top-0 md:top-6 bottom-0 md:bottom-6 z-50 transition-all duration-500 ease-in-out
+                w-[19rem] bg-white md:rounded-[2.8rem] p-8 shadow-2xl shadow-slate-200/50 flex flex-col border border-slate-100
+                ${isMobileMenuOpen ? 'left-0 md:left-6' : '-left-full md:left-6'} 
             `}>
-                <div className="flex items-center gap-3 mb-12">
-                    <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center overflow-hidden shadow-lg">
+                {/* Brand Logo Section */}
+                <div className="flex items-center gap-4 mb-10 px-2">
+                    <div className="w-12 h-12 bg-gradient-to-br from-blue-600 to-indigo-700 rounded-2xl flex items-center justify-center shadow-lg shadow-blue-200 overflow-hidden text-white">
                         {settings?.shop_logo ? (
-                            <img 
-                                key={settings.shop_logo}
-                                src={settings.shop_logo}
-                                alt="Logo"  
-                                className="w-full h-full object-contain"
-                                onError={(e) => { e.target.src = '/images/default-logo.png'; }}
-                            />
-                        ) : (
-                            <LayoutGrid className="text-blue-600" />
-                        )}
+                            <img src={settings.shop_logo} alt="Logo" className="w-full h-full object-cover" />
+                        ) : <LayoutGrid size={24} />}
                     </div>
-                    <div>
-                        <h1 className="font-bold text-lg leading-none uppercase truncate w-32">
-                        <span>{settings.shop_name}</span>
+                    <div className="overflow-hidden">
+                        <h1 className="font-black text-sm leading-tight uppercase truncate text-slate-800 tracking-tight">
+                            {settings?.shop_name || 'Admin Panel'}
                         </h1>
-                        <p className="text-[10px] text-slate-400 mt-1 uppercase tracking-wider font-bold">Admin Panel</p>
+                        <div className="flex items-center gap-1.5 mt-1">
+                            <div className="w-1.5 h-1.5 bg-emerald-500 rounded-full"></div>
+                            <p className="text-[9px] text-slate-400 uppercase tracking-[0.15em] font-black">Online System</p>
+                        </div>
                     </div>
                 </div>
 
-               <nav className="flex-1 space-y-1 overflow-y-auto pr-2 custom-scrollbar">
-                    {/* --- MAIN MENU --- */}
-                    <div className="pb-2">
-                        <p className="px-6 text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-2">Main Menu</p>
+                {/* Navigation Scroll Area */}
+                <nav className="flex-1 space-y-1 overflow-y-auto pr-2 custom-scrollbar">
+                    {/* Main Menu */}
+                    <div className="pt-2 pb-3">
+                        <p className="px-5 text-[10px] font-black text-slate-300 uppercase tracking-[0.25em] mb-4">Core</p>
+                        <SidebarItem icon={<LayoutGrid size={20}/>} label="Overview" href={route('admin.dashboard')} active={route().current('admin.dashboard')} />
+                        <SidebarItem icon={<BarChart3 size={20}/>} label="Analytics" href={route('admin.analytics.index')} active={route().current('admin.analytics.*')} />
                     </div>
-                    <SidebarItem icon={<LayoutGrid size={20}/>} label="Overview" href={route('admin.dashboard')} active={route().current('admin.dashboard')} />
-                    <SidebarItem icon={<BarChart3 size={20}/>} label="Analytics" href={route('admin.analytics.index')} active={route().current('admin.analytics.index')} />
                     
-                    <div className="pt-6 pb-2">
-                        <p className="px-6 text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-2">Shop Management</p>
+                    {/* Management */}
+                    <div className="pt-6 pb-3">
+                        <p className="px-5 text-[10px] font-black text-slate-300 uppercase tracking-[0.25em] mb-4">Inventory & Sales</p>
+                        <SidebarItem icon={<Package size={20}/>} label="Products" href={route('admin.products.index')} active={route().current('admin.products.*')} />
+                        <SidebarItem icon={<Layers size={20}/>} label="Categories" href={route('admin.categories.index')} active={route().current('admin.categories.*')} />
+                        <SidebarItem icon={<ShoppingCart size={20} />} label="Orders" href={route('admin.orders.index')} active={route().current('admin.orders.*')} />
+                        <SidebarItem icon={<Users size={20}/>} label="Users" href={route('admin.users.index')} active={route().current('admin.users.*')} />
                     </div>
-                    <SidebarItem icon={<Package size={20}/>} label="Products" href={route('admin.products.index')} active={route().current('admin.products.*')} />
-                    <SidebarItem icon={<ShoppingCart size={20} />} label="Orders" href={route('admin.orders.index')} active={route().current('admin.orders.*')} />
-                    <SidebarItem icon={<LayoutGrid size={20}/>} label="Categories" href={route('admin.categories.index')} active={route().current('admin.categories.*')} />
-                    <SidebarItem icon={<Receipt size={20}/>} label="Transactions" href={route('admin.transactions.index')} active={route().current('admin.transactions.index')} />
-                    <SidebarItem icon={<FileText size={20}/>} label="Reports" href={route('admin.reports.index')} active={route().current('admin.reports.index')} />
 
-                    {/* --- SYSTEM SECTION --- */}
-                    <div className="pt-6 pb-2">
-                        <p className="px-6 text-[10px] font-black text-slate-300 uppercase tracking-[0.2em] mb-2">Configuration</p>
+                    {/* Finance */}
+                    <div className="pt-6 pb-3">
+                        <p className="px-5 text-[10px] font-black text-slate-300 uppercase tracking-[0.25em] mb-4">Accounting</p>
+                        <SidebarItem icon={<Receipt size={20}/>} label="Transactions" href={route('admin.transactions.index')} active={route().current('admin.transactions.*')} />
+                        <SidebarItem icon={<FileText size={20}/>} label="Reports" href={route('admin.reports.index')} active={route().current('admin.reports.*')} />
                     </div>
-                    <SidebarItem 
-                        icon={<Settings size={20}/>} 
-                        label="Settings" 
-                        href={route('admin.settings.index')} 
-                        active={route().current('admin.settings.*')} 
-                    />
                 </nav>
-            {/* BAGIAN BAWAH SIDEBAR (FOOTER) */}
-            <div className="mt-auto pt-6 border-t border-slate-50">
-                <div className="px-6 py-4 bg-blue-50/50 rounded-3xl border border-blue-100/50">
-                    <p className="text-[10px] font-bold text-blue-600 uppercase tracking-tighter">System Status</p>
-                    <div className="flex items-center gap-2 mt-1">
-                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                        <p className="text-[11px] font-bold text-slate-600">All systems operational</p>
+
+                {/* Sidebar Footer */}
+                <div className="mt-auto pt-6 border-t border-slate-50 space-y-4">
+                    <SidebarItem icon={<Settings size={20}/>} label="Settings" href={route('admin.settings.index')} active={route().current('admin.settings.*')} />
+                    
+                    <div className="p-5 bg-slate-900 rounded-[2rem] text-white relative overflow-hidden group">
+                        <div className="relative z-10">
+                            <p className="text-[9px] font-black text-blue-400 uppercase tracking-widest">Active Admin</p>
+                            <p className="text-xs font-bold mt-1 truncate">{user?.name}</p>
+                        </div>
+                        <div className="absolute -right-2 -bottom-2 opacity-10 group-hover:scale-110 transition-transform">
+                            <Users size={60} />
+                        </div>
                     </div>
                 </div>
-            </div>
             </aside>
 
-            {/* --- OVERLAY UNTUK MOBILE --- */}
+            {/* --- 2. MOBILE OVERLAY --- */}
             {isMobileMenuOpen && (
-                        <div 
-                            className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 md:hidden"
-                            onClick={() => setIsMobileMenuOpen(false)}
-                        />
-                )}
+                <div className="fixed inset-0 bg-slate-900/60 backdrop-blur-md z-40 md:hidden transition-opacity" onClick={() => setIsMobileMenuOpen(false)} />
+            )}
 
-            {/* --- MAIN CONTENT AREA --- */}
-            <main className={`
-                            flex-1 min-h-screen transition-all duration-300
-                            /* MOBILE: Tanpa margin kiri agar penuh */
-                            ml-0 p-4 
-                            /* DESKTOP: Beri margin kiri seukuran sidebar + gap */
-                            md:ml-[20rem] md:p-10
-                `}>
-                <header className="flex justify-between items-center mb-10">
-                    {/* TOMBOL HAMBURGER UNTUK MOBILE */}
-                    <button 
-                        onClick={() => setIsMobileMenuOpen(true)}
-                        className="p-3 bg-white rounded-2xl shadow-sm border border-slate-100 md:hidden text-slate-600"
-                        >
-                        <Menu size={24} /> {/* Jangan lupa import Menu dari lucide-react */}
-                    </button>
-                    
-                    <div className="flex-1 md:block hidden ml-4">
-                        <h2 className="text-3xl font-black text-slate-800 tracking-tight">
+            {/* --- 3. MAIN CONTENT --- */}
+            <main className="flex-1 min-h-screen transition-all duration-300 ml-0 md:ml-[21rem] p-5 md:p-10">
+                
+                {/* Top Header */}
+                <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 mb-12">
+                    <div className="flex items-center gap-4 w-full md:w-auto">
+                        <button onClick={() => setIsMobileMenuOpen(true)} className="p-3.5 bg-white rounded-2xl shadow-sm border border-slate-100 md:hidden text-slate-600 active:scale-90 transition-transform">
+                            <Menu size={24} />
+                        </button>
+                        <h2 className="text-2xl md:text-3xl font-black text-slate-800 tracking-tight">
                             {getHeaderTitle()}
                         </h2>
                     </div>
                     
-                    <div className="flex items-center gap-3">
-                        {/* --- SEARCH BAR --- */}
-                        <div className="relative">
+                    <div className="flex items-center gap-4 w-full md:w-auto justify-end">
+                        {/* Search Bar */}
+                        <div className="relative hidden lg:block">
                             <div className="relative group">
-                                {isSearching ? (
-                                    <Loader2 className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500 animate-spin" size={18} />
-                                ) : (
-                                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-500 transition-colors" size={18} />
-                                )}
+                                {isSearching ? <Loader2 className="absolute left-4 top-1/2 -translate-y-1/2 text-blue-500 animate-spin" size={18} /> : <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 group-focus-within:text-blue-600 transition-colors" size={18} />}
                                 <input 
                                     type="text" 
                                     value={searchTerm}
                                     onChange={(e) => setSearchTerm(e.target.value)}
-                                    placeholder="Search products, orders..." 
-                                    className="pl-12 pr-6 py-3 bg-white border-none rounded-full shadow-sm focus:ring-4 focus:ring-blue-50 w-72 transition-all text-sm font-medium"
+                                    placeholder="Search command..." 
+                                    className="pl-12 pr-6 py-3.5 bg-white border-none rounded-2xl shadow-sm focus:ring-4 focus:ring-blue-500/5 w-64 xl:w-80 transition-all text-xs font-bold"
                                 />
                             </div>
 
-                            {/* Dropdown Hasil Search */}
+                            {/* Search Results Dropdown */}
                             {searchResults.length > 0 && (
-                                <div className="absolute top-full left-0 mt-3 w-80 bg-white rounded-[2rem] shadow-2xl border border-slate-100 z-[60] p-4 overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-                                    <p className="px-4 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest border-b border-slate-50 mb-2">Search Results</p>
-                                    <div className="max-h-80 overflow-y-auto custom-scrollbar">
+                                <div className="absolute top-full right-0 mt-4 w-80 bg-white rounded-[2rem] shadow-2xl border border-slate-100 z-[70] p-4 animate-in slide-in-from-top-2">
+                                    <div className="max-h-80 overflow-y-auto custom-scrollbar space-y-1">
                                         {searchResults.map((result, idx) => (
-                                            <Link 
-                                                key={idx} 
-                                                href={result.url}
-                                                onClick={() => setSearchTerm('')}
-                                                className="flex items-center justify-between p-3 hover:bg-blue-50 rounded-2xl transition-all group/item"
-                                            >
+                                            <Link key={idx} href={result.url} onClick={() => setSearchTerm('')} className="flex items-center justify-between p-4 hover:bg-slate-50 rounded-2xl transition-all group/item">
                                                 <div>
-                                                    <p className="text-sm font-bold text-slate-700 group-hover/item:text-blue-600 transition-colors">{result.title}</p>
-                                                    <p className="text-[10px] text-slate-400 font-bold uppercase">{result.type}</p>
+                                                    <p className="text-sm font-black text-slate-800 group-hover/item:text-blue-600">{result.title}</p>
+                                                    <p className="text-[9px] text-slate-400 font-black uppercase mt-0.5">{result.type}</p>
                                                 </div>
-                                                <ChevronRight size={14} className="text-slate-300 group-hover/item:translate-x-1 transition-all" />
+                                                <ChevronRight size={14} className="text-slate-300 group-hover/item:translate-x-1" />
                                             </Link>
                                         ))}
                                     </div>
@@ -217,109 +176,58 @@ export default function AdminLayout({ children, user }) {
                             )}
                         </div>
 
-                        {/* --- NOTIFICATION BELL --- */}
+                        {/* Notifications */}
                         <div className="relative group">
-                            <button className="p-3 bg-white rounded-full shadow-sm relative hover:bg-slate-50 transition-colors">
-                                <Bell size={20} className="text-slate-600" />
-                                {totalNotif > 0 && (
-                                    <span className="absolute top-2.5 right-2.5 w-4 h-4 bg-rose-500 text-white text-[9px] font-black rounded-full border-2 border-white flex items-center justify-center animate-bounce">
-                                        {totalNotif}
-                                    </span>
-                                )}
+                            <button className="p-3.5 bg-white rounded-2xl shadow-sm border border-slate-50 text-slate-600 hover:text-blue-600 transition-all relative">
+                                <Bell size={20} />
+                                {totalNotif > 0 && <span className="absolute top-3 right-3 w-4 h-4 bg-rose-500 text-white text-[9px] font-black rounded-full border-2 border-white flex items-center justify-center">{totalNotif}</span>}
                             </button>
-
-                            <div className="absolute right-0 mt-3 w-80 bg-white rounded-[2rem] shadow-2xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 p-4">
-                                <h4 className="px-4 py-2 text-[10px] font-black text-slate-400 uppercase tracking-widest">Quick Alerts</h4>
-                                <div className="space-y-1 mt-2">
+                            
+                            {/* Notification Dropdown */}
+                            <div className="absolute right-0 mt-4 w-72 bg-white rounded-[2rem] shadow-2xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 p-4">
+                                <p className="px-3 py-2 text-[10px] font-black text-slate-300 uppercase tracking-widest">Alerts</p>
+                                <div className="mt-2 space-y-1">
                                     {pendingOrders > 0 && (
-                                        <Link href={route('admin.orders.index')} className="flex items-center gap-4 p-4 hover:bg-amber-50 rounded-2xl transition-all">
-                                            <div className="w-10 h-10 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center"><ShoppingCart size={18} /></div>
-                                            <div>
-                                                <p className="text-sm font-bold text-slate-700">{pendingOrders} New Orders</p>
-                                                <p className="text-[10px] text-slate-400 font-medium">Pending to process</p>
-                                            </div>
+                                        <Link href={route('admin.orders.index')} className="flex items-center gap-3 p-3 hover:bg-amber-50 rounded-2xl transition-all">
+                                            <div className="w-9 h-9 bg-amber-100 text-amber-600 rounded-xl flex items-center justify-center"><ShoppingCart size={16} /></div>
+                                            <span className="text-xs font-bold text-slate-700">{pendingOrders} Pending Orders</span>
                                         </Link>
                                     )}
                                     {lowStock > 0 && (
-                                        <Link href={route('admin.products.index')} className="flex items-center gap-4 p-4 hover:bg-rose-50 rounded-2xl transition-all">
-                                            <div className="w-10 h-10 bg-rose-100 text-rose-600 rounded-xl flex items-center justify-center"><AlertTriangle size={18} /></div>
-                                            <div>
-                                                <p className="text-sm font-bold text-slate-700">{lowStock} Low Stock Items</p>
-                                                <p className="text-[10px] text-slate-400 font-medium">Restock suggested</p>
-                                            </div>
+                                        <Link href={route('admin.products.index')} className="flex items-center gap-3 p-3 hover:bg-rose-50 rounded-2xl transition-all">
+                                            <div className="w-9 h-9 bg-rose-100 text-rose-600 rounded-xl flex items-center justify-center"><AlertTriangle size={16} /></div>
+                                            <span className="text-xs font-bold text-slate-700">{lowStock} Low Stock Items</span>
                                         </Link>
-                                    )}
-                                    {totalNotif === 0 && (
-                                        <div className="py-6 text-center text-slate-400 text-sm font-medium">No new notifications</div>
                                     )}
                                 </div>
                             </div>
                         </div>
 
-                        {/* --- USER PROFILE DROPDOWN --- */}
+                        {/* User Profile */}
                         <div className="relative group">
-                            <button className="flex items-center gap-3 bg-white p-1.5 pr-5 rounded-full shadow-sm border border-white hover:border-blue-100 hover:shadow-md transition-all duration-300 group-hover:bg-slate-50">
-                                <div className="relative">
-                                    <img 
-                                        src={`https://ui-avatars.com/api/?name=${user?.name || 'Admin'}&background=2563EB&color=fff&bold=true`} 
-                                        className="w-9 h-9 rounded-full shadow-inner border border-slate-100" 
-                                        alt="avatar" 
-                                    />
-                                    {/* Online Status Dot */}
-                                    <span className="absolute bottom-0 right-0 w-2.5 h-2.5 bg-emerald-500 border-2 border-white rounded-full"></span>
+                            <button className="flex items-center gap-3 bg-white p-1.5 pr-4 rounded-2xl shadow-sm border border-slate-50 hover:shadow-md transition-all">
+                                <img src={`https://ui-avatars.com/api/?name=${user?.name}&background=2563EB&color=fff&bold=true`} className="w-10 h-10 rounded-xl object-cover" alt="avatar" />
+                                <div className="hidden sm:block text-left">
+                                    <p className="text-xs font-black text-slate-800 leading-none">{user?.name?.split(' ')[0]}</p>
+                                    <p className="text-[9px] font-bold text-slate-400 uppercase mt-1">Super Admin</p>
                                 </div>
-                                <div className="flex flex-col text-left">
-                                    <span className="font-bold text-sm text-slate-700 leading-none group-hover:text-blue-600 transition-colors">
-                                        {user?.name || 'Admin'}
-                                    </span>
-                                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-tighter mt-0.5">
-                                        Authorized Admin
-                                    </span>
-                                </div>
-                                <ChevronRight size={14} className="ml-2 text-slate-300 group-hover:rotate-90 group-hover:text-blue-500 transition-all duration-300" />
                             </button>
 
-                            {/* Dropdown Menu - Muncul saat Hover */}
-                            <div className="absolute right-0 mt-3 w-56 bg-white rounded-[2rem] shadow-2xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all duration-300 z-50 p-3 translate-y-2 group-hover:translate-y-0">
-                                <div className="px-4 py-3 border-b border-slate-50 mb-2">
-                                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Account Status</p>
-                                    <div className="flex items-center gap-2 mt-1">
-                                        <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse"></div>
-                                        <p className="text-xs font-bold text-emerald-600">Active Session</p>
-                                    </div>
-                                </div>
-                                
-                                <div className="space-y-1">
-                                    <Link href={route('admin.settings.index')} className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-2xl transition-all group/item">
-                                        <div className="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center group-hover/item:bg-blue-100 transition-colors">
-                                            <Settings size={16} />
-                                        </div>
-                                        <span className="text-sm font-bold">Edit Profile</span>
-                                    </Link>
-                                    
-                                    <Link href={route('admin.settings.index')} className="flex items-center gap-3 px-4 py-3 text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-2xl transition-all group/item">
-                                        <div className="w-8 h-8 bg-slate-50 rounded-xl flex items-center justify-center group-hover/item:bg-blue-100 transition-colors">
-                                            <Bell size={16} />
-                                        </div>
-                                        <span className="text-sm font-bold">Preferences</span>
-                                    </Link>
-
-                                    <button 
-                                        onClick={handleLogout}
-                                        className="w-full flex items-center gap-3 px-4 py-3 text-rose-500 hover:bg-rose-50 rounded-2xl transition-all group/item"
-                                    >
-                                        <div className="w-8 h-8 bg-rose-50 rounded-xl flex items-center justify-center group-hover/item:bg-rose-100 transition-colors">
-                                            <LogOut size={16} />
-                                        </div>
-                                        <span className="text-sm font-bold">Sign Out</span>
-                                    </button>
-                                </div>
+                            {/* Profile Dropdown */}
+                            <div className="absolute right-0 mt-4 w-52 bg-white rounded-[2rem] shadow-2xl border border-slate-100 opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50 p-3">
+                                <Link href={route('admin.settings.index')} className="flex items-center gap-3 p-3 text-slate-600 hover:bg-blue-50 hover:text-blue-600 rounded-xl transition-all">
+                                    <Settings size={16} /> <span className="text-xs font-bold">Settings</span>
+                                </Link>
+                                <button onClick={handleLogout} className="w-full flex items-center gap-3 p-3 text-rose-500 hover:bg-rose-50 rounded-xl transition-all">
+                                    <LogOut size={16} /> <span className="text-xs font-bold">Logout</span>
+                                </button>
                             </div>
                         </div>
                     </div>
                 </header>
 
-                <div className="max-w-full overflow-x-hidden">
+                {/* Page Content */}
+                <div className="animate-in fade-in slide-in-from-bottom-4 duration-700">
                     {children}
                 </div>
             </main>

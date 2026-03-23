@@ -5,34 +5,41 @@ use Illuminate\Http\Request;
 use App\Models\Product;
 use Illuminate\Support\Facades\Route;
 use Inertia\Inertia;
+use Illuminate\Support\Facades\Auth;
+use Illuminate\Foundation\Auth\EmailVerificationRequest;
 
-// --- CONTROLLERS USER ---
-use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\CategoryController;
-use App\Http\Controllers\ProductController;
-use App\Http\Controllers\CartController;
-use App\Http\Controllers\OrderController as UserOrderController;
-
-// --- CONTROLLERS ADMIN ---
-use App\Http\Controllers\Admin\AnalyticsController;
-use App\Http\Controllers\Admin\AdminOrderController;
-use App\Http\Controllers\Admin\SettingController;
-use App\Http\Controllers\Admin\TransactionController;
-use App\Http\Controllers\Admin\ReportController;
-use App\Http\Controllers\Admin\GlobalSearchController;
+// --- CONTROLLERS ---
+use App\Http\Controllers\User\ProfileController;
+use App\Http\Controllers\User\CartController;
+use App\Http\Controllers\Shop\ProductController as ShopProductController;
+use App\Http\Controllers\Admin\{
+    DashboardController as AdminDashboardController,
+    CategoryController as AdminCategoryController,
+    ProductController as AdminProductController,
+    UserController as AdminUserController,
+    AnalyticsController,
+    AdminOrderController,
+    SettingController,
+    TransactionController,
+    ReportController,
+    GlobalSearchController
+};
 
 // --------------------------------------------------------------------------
 // GUEST ROUTES
 // --------------------------------------------------------------------------
 Route::get('/', function (Request $request) {
-    // Catat visitor
-    DB::table('visitors')->insert([
-        'ip_address' => $request->ip(),
-        'user_agent' => $request->userAgent(),
-        'created_at' => now(),
-        'updated_at' => now(),
-    ]);
+    // Tracking visitor sederhana
+    DB::table('visitors')->updateOrInsert(
+            [
+                'ip_address' => $request->ip(),
+                'created_at' => now()->startOfDay() // Unik per hari
+            ],
+            [
+                'user_agent' => $request->userAgent(),
+                'updated_at' => now()
+            ]
+        );
 
     return Inertia::render('Welcome', [
         'products' => Product::latest()->take(10)->get(),
@@ -47,25 +54,44 @@ Route::get('/shop', function () {
     ]);
 })->name('shop.index');
 
+Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
+    $request->fulfill();
+    return response()->json(['message' => 'Email verified']);
+})->middleware(['auth', 'signed'])->name('verification.verify');
+
 // --------------------------------------------------------------------------   
-// AUTHENTICATED ROUTES (User Biasa)
+// AUTHENTICATED ROUTES (General)
 // --------------------------------------------------------------------------
 Route::middleware(['auth', 'verified'])->group(function () {
     
-    // Dashboard User (Membaca role di Controller)
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
-    
-    Route::get('/shop/product/{id}', [ProductController::class, 'showCustomer'])->name('shop.product.show');
-    
-    Route::get('/my-orders', [UserOrderController::class, 'index'])->name('orders.index');
-    Route::get('/my-orders/{id}', [UserOrderController::class, 'show'])->name('orders.show');  
+    // Logic Pengalihan Dashboard: 
+    // Jika admin ke /admin/dashboard, jika user ke / (atau halaman lain)
+Route::get('/dashboard', function () {
+    // Gunakan Static Method dari Class Auth, ini lebih stabil daripada helper auth()
+    if (Auth::check()) {
+        $user = Auth::user();
+        
+        // Cek role dengan aman
+        if ($user && $user->role === 'admin') {
+            return redirect()->route('admin.dashboard');
+        }
+    }
 
+    // Jika gagal atau bukan admin, lempar ke welcome
+    return redirect()->route('welcome');
+})->name('dashboard');
+    
+    Route::get('/shop/product/{id}', [ShopProductController::class, 'show'])->name('shop.product.show');    
+    Route::get('/my-orders', [AdminOrderController::class, 'index'])->name('orders.index'); 
+
+    // Profile Management
     Route::controller(ProfileController::class)->group(function () {
         Route::get('/profile', 'edit')->name('profile.edit');
         Route::patch('/profile', 'update')->name('profile.update');
         Route::delete('/profile', 'destroy')->name('profile.destroy');
     });
 
+    // Cart Management
     Route::controller(CartController::class)->group(function () {
         Route::get('/cart', 'index')->name('cart.index');
         Route::post('/cart', 'store')->name('cart.store');
@@ -76,20 +102,21 @@ Route::middleware(['auth', 'verified'])->group(function () {
 });
 
 // --------------------------------------------------------------------------
-// ADMIN ONLY ROUTES (Prefix: /admin, Name: admin.*)
+// ADMIN ONLY ROUTES
 // --------------------------------------------------------------------------
+// Catatan: Jika 'can:admin-access' error, ganti sementara dengan middleware custom atau cek Gate
 Route::middleware(['auth', 'can:admin-access'])->prefix('admin')->name('admin.')->group(function () {
     
-    // --- DASHBOARD ADMIN ---
-    // Penting: Agar Sidebar 'Overview' dengan route('admin.dashboard') bekerja
-    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+    // Dashboard Utama Admin
+    Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
-    // CRUD Management
-    Route::resource('products', ProductController::class);
-    Route::resource('categories', CategoryController::class);
-    Route::delete('/product-images/{id}', [ProductController::class, 'destroyImage'])->name('product-images.destroy');
+    // Resources
+    Route::resource('products', AdminProductController::class);
+    Route::resource('categories', AdminCategoryController::class);
+    Route::resource('users', AdminUserController::class); 
     
-    // Search API (Untuk Global Search di AdminLayout)
+    // Additional Product Routes
+    Route::delete('/product-images/{id}', [AdminProductController::class, 'destroyImage'])->name('product-images.destroy');
     Route::get('/api/search', [GlobalSearchController::class, 'search'])->name('api.search');
     
     // Order Management
@@ -100,22 +127,16 @@ Route::middleware(['auth', 'can:admin-access'])->prefix('admin')->name('admin.')
         Route::delete('/orders/{order}', 'destroy')->name('orders.destroy');
     });
 
-    // Analytics
-    Route::get('/analytics', function () {
-        return Inertia::render('Admin/Analytics');
-    })->name('analytics.index');
-
-    // Transactions
+    // Analytics & Settings
+    Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
     Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
     
-    // Settings
     Route::controller(SettingController::class)->group(function () {
         Route::get('/settings', 'index')->name('settings.index');
         Route::post('/settings', 'store')->name('settings.store');
         Route::post('/settings/reset', 'reset')->name('settings.reset');
     });
     
-    // Reports
     Route::controller(ReportController::class)->group(function () {
         Route::get('/reports', 'index')->name('reports.index');
         Route::get('/reports/excel', 'exportExcel')->name('reports.excel');
