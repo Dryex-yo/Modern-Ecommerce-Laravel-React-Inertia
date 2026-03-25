@@ -59,6 +59,14 @@ Cocok untuk:
 
 ---
 
+##DEMO
+
+
+https://github.com/user-attachments/assets/709ac4fd-ade6-4873-8133-17301f39d21d
+
+
+
+
 ## 🚀 Why Choose This Project?
 - ⚡ Fast SPA experience (no page reload)
 - 🔒 Secure backend with Laravel
