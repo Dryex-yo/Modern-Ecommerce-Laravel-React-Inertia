@@ -53,17 +53,5 @@ class DashboardController extends Controller
                     ->get(),
             ]);
         }
-
-        // ================================
-        // USER VIEW (Dashboard Biasa)
-        // ================================
-        return Inertia::render('Dashboard', [
-            'myOrdersCount' => Order::where('user_id', $user->id)->count(),
-            'wishlistCount' => Wishlist::where('user_id', $user->id)->count(),            
-            'recentActivity' => Order::where('user_id', $user->id)
-                ->latest()
-                ->limit(3)
-                ->get(),
-        ]);
     }
 }

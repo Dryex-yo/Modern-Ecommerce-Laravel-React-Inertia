@@ -125,6 +125,9 @@ return [
 
     'aliases' => [
         'Pdf' => Barryvdh\DomPDF\Facade\Pdf::class,
-    ]
+    ],
+
+    'shop_name' => env('SHOP_NAME', 'ELECTRICAL STYLES'),
+    'shop_email' => env('SHOP_EMAIL', 'contact@dryshop.local'),
 
 ];

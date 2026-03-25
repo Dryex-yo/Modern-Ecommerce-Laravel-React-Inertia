@@ -21,6 +21,11 @@ class User extends Authenticatable
         'password',
         'role',
         'avatar', // Tambahkan ini agar fitur upload foto profil berfungsi
+        'birth_date',
+        'loyalty_points',
+        'last_login_at',
+        'referral_code',
+        'two_factor_enabled',
     ];
 
     protected $hidden = [
@@ -32,6 +37,9 @@ class User extends Authenticatable
     {
         return [
             'email_verified_at' => 'datetime',
+            'last_login_at' => 'datetime',
+            'created_at' => 'datetime',
+            'updated_at' => 'datetime',
             'password' => 'hashed',
         ];
     }
@@ -82,5 +90,10 @@ class User extends Authenticatable
     public function getAvatarUrlAttribute(): ?string
     {
         return $this->avatar ? asset('storage/' . $this->avatar) : null;
+    }
+
+    public function carts(): HasMany
+    {
+        return $this->hasMany(Cart::class);
     }
 }

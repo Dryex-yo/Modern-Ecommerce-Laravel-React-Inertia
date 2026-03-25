@@ -13,6 +13,15 @@ export default function Orders({ auth, orders, cart_count }) {
         router.post(route('logout'));
     };
 
+    // Helper format IDR
+    const formatIDR = (value) => {
+        return new Intl.NumberFormat('id-ID', {
+            style: 'currency',
+            currency: 'IDR',
+            minimumFractionDigits: 0
+        }).format(value);
+    };
+
     return (
         <div className="min-h-screen bg-[#FDFDFD] text-slate-900 font-sans selection:bg-blue-100">
             <Head title="Riwayat Pesanan Saya" />
@@ -66,23 +75,56 @@ export default function Orders({ auth, orders, cart_count }) {
                                 key={order.id} 
                                 className="group bg-white border border-slate-100 rounded-[2rem] p-6 transition-all duration-500 hover:border-blue-100 hover:shadow-2xl hover:shadow-blue-50/50"
                             >
-                                <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-                                    <div className="flex items-center gap-6">
-                                        <div className="w-14 h-14 bg-slate-50 rounded-2xl flex items-center justify-center text-slate-400 group-hover:scale-110 group-hover:bg-blue-600 group-hover:text-white transition-all duration-500">
-                                            <Package size={24} strokeWidth={1.5} />
-                                        </div>
-                                        <div>
-                                            <div className="flex items-center gap-2 mb-1">
-                                                <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">#{order.id}</span>
-                                                <span className="text-[10px] font-bold text-slate-300">•</span>
-                                                <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                                                    {new Date(order.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
-                                                </span>
+                                <div className="flex flex-col md:flex-row md:items-center gap-6">
+                                    {/* Image Container */}
+                                    <div className="w-32 h-32 rounded-3xl overflow-hidden bg-slate-50 border border-slate-100 flex-shrink-0">
+                                        {order.items && order.items.length > 0 && order.items[0]?.product ? (
+                                            <img 
+                                                src={order.items[0].product.image ? `/storage/${order.items[0].product.image}` : '/images/placeholder.png'}
+                                                alt={order.items[0].product.name || 'Product'}
+                                                className="w-full h-full object-cover"
+                                                onError={(e) => { e.target.src = '/images/placeholder.png' }} 
+                                            />
+                                        ) : (
+                                            <div className="w-full h-full flex items-center justify-center text-slate-300">
+                                                <Package size={48} />
                                             </div>
-                                            <h3 className="font-black text-xl text-slate-900 tracking-tight">
-                                                Rp {new Intl.NumberFormat('id-ID').format(order.total_price || order.total_bayar)}
-                                            </h3>
+                                        )}
+                                    </div>
+                                    
+                                    {/* Product Info */}
+                                    <div className="flex-1 text-center sm:text-left">
+                                        <div className="flex items-center gap-2 mb-2 justify-center sm:justify-start">
+                                            <span className="text-[10px] font-black text-blue-600 uppercase tracking-widest">#{order.id}</span>
+                                            <span className="text-[10px] font-bold text-slate-300">•</span>
+                                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                                                {new Date(order.created_at).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' })}
+                                            </span>
                                         </div>
+                                        
+                                        {order.items && order.items.length > 0 && order.items[0]?.product ? (
+                                            <>
+                                                <h3 className="font-black text-slate-800 text-xl tracking-tight leading-tight mb-2">
+                                                    {order.items[0].product.name}
+                                                </h3>
+                                                <span className="text-[10px] font-black uppercase text-blue-600 tracking-widest">
+                                                    {order.items[0].product.category?.name || 'General'}
+                                                </span>
+                                            </>
+                                        ) : (
+                                            <h3 className="font-black text-slate-800 text-xl tracking-tight leading-tight mb-2">
+                                                Order #{order.order_number}
+                                            </h3>
+                                        )}
+                                        
+                                        <p className="text-blue-600 font-black text-lg mt-2">
+                                            {formatIDR(order.total_price)}
+                                        </p>
+                                        {order.items && order.items.length > 0 && (
+                                            <p className="text-[10px] text-slate-400 font-semibold mt-1">
+                                                {order.items.length} item{order.items.length > 1 ? 's' : ''}
+                                            </p>
+                                        )}
                                     </div>
 
                                     <div className="flex items-center justify-between md:justify-end gap-4 border-t md:border-t-0 pt-4 md:pt-0">
@@ -99,7 +141,7 @@ export default function Orders({ auth, orders, cart_count }) {
                                         </div>
                                         
                                         <Link 
-                                            href={route('admin.orders.show', order.id)} // Sesuaikan route detail jika ada khusus user
+                                            href={route('orders.show', order.id)}
                                             className="w-12 h-12 rounded-full border border-slate-100 flex items-center justify-center text-slate-900 hover:bg-slate-900 hover:text-white transition-all duration-300 group/btn"
                                         >
                                             <ChevronRight size={20} className="group-hover/btn:translate-x-0.5 transition-transform" />

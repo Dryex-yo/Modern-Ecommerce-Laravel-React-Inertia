@@ -12,6 +12,8 @@ use Illuminate\Foundation\Auth\EmailVerificationRequest;
 use App\Http\Controllers\WishlistController;
 use App\Http\Controllers\AddressController;
 use App\Http\Controllers\PaymentMethodController;
+use App\Http\Controllers\OrderController;
+use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\User\CartController;
 use App\Http\Controllers\Shop\ProductController as ShopProductController;
@@ -34,15 +36,15 @@ use App\Http\Controllers\Admin\{
 Route::get('/', function (Request $request) {
     // Tracking visitor sederhana
     DB::table('visitors')->updateOrInsert(
-            [
-                'ip_address' => $request->ip(),
-                'created_at' => now()->startOfDay() // Unik per hari
-            ],
-            [
-                'user_agent' => $request->userAgent(),
-                'updated_at' => now()
-            ]
-        );
+        [
+            'ip_address' => $request->ip(),
+            'created_at' => now()->startOfDay()
+        ],
+        [
+            'user_agent' => $request->userAgent(),
+            'updated_at' => now()
+        ]
+    );
 
     return Inertia::render('Welcome', [
         'products' => Product::latest()->take(10)->get(),
@@ -52,109 +54,115 @@ Route::get('/', function (Request $request) {
 })->name('welcome');
 
 Route::get('/shop', [ShopProductController::class, 'index'])->name('shop.index');
+Route::get('/shop/product/{id}', [ShopProductController::class, 'show'])->name('shop.product.show');
 
+// Email Verification
 Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
     $request->fulfill();
     return response()->json(['message' => 'Email verified']);
 })->middleware(['auth', 'signed'])->name('verification.verify');
 
 // --------------------------------------------------------------------------   
-// AUTHENTICATED ROUTES (General)
+// AUTHENTICATED ROUTES (User)
 // --------------------------------------------------------------------------
-    Route::middleware(['auth', 'verified'])->group(function () {
-        
-        // Logic Pengalihan Dashboard: 
-        // Jika admin ke /admin/dashboard, jika user ke / (atau halaman lain)
-    Route::get('/dashboard', function () {
-        $user = Auth::user();
-
-        // 1. Jika dia Admin, lempar ke Dashboard Admin (di folder Admin)
-        if ($user && $user->role === 'admin') {
-            return redirect()->route('admin.dashboard');
-        }
-
-        // 2. Jika dia User biasa, tampilkan file Dashboard.jsx yang ada di folder Pages
-        return Inertia::render('Dashboard', [
-            'user' => $user
-        ]);
-    })->name('dashboard');
+Route::middleware(['auth', 'verified'])->group(function () {
     
-    Route::get('/shop/product/{id}', [ShopProductController::class, 'show'])->name('shop.product.show');    
-    Route::get('/my-orders', function () {
-        return Inertia::render('User/Orders', [ // <--- Arahkan ke folder User
-            'orders' => Auth::user()->orders // Atau ambil dari controller
-        ]);
-    })->name('orders.index');    
+    // Dashboard dengan Auto Redirect
+    Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     
-    // Profile Management
-    Route::controller(ProfileController::class)->group(function () {
-        Route::get('/profile', 'edit')->name('profile.edit');
-        Route::patch('/profile', 'update')->name('profile.update');
-        Route::delete('/profile', 'destroy')->name('profile.destroy');
+    // ===== PROFILE & ACCOUNT =====
+    Route::controller(ProfileController::class)->prefix('profile')->name('profile.')->group(function () {
+        Route::get('/', 'edit')->name('edit');
+        Route::patch('/', 'update')->name('update');
+        Route::post('/password', 'updatePassword')->name('password.update');
+        Route::post('/two-factor', 'toggle2FA')->name('two-factor.toggle');
+        Route::delete('/', 'destroy')->name('destroy');
+    });
+    
+    // ===== ADDRESSES =====
+    Route::resource('addresses', AddressController::class)->except(['show']);
+    
+    // ===== PAYMENT METHODS =====
+    Route::prefix('payment-methods')->name('payment-methods.')->group(function () {
+        Route::post('/', [PaymentMethodController::class, 'store'])->name('store');
+        Route::delete('/{id}', [PaymentMethodController::class, 'destroy'])->name('destroy');
+    });
+    
+    // ===== CART =====
+    Route::controller(CartController::class)->prefix('cart')->name('cart.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/', 'store')->name('store');
+        Route::patch('/{id}', 'update')->name('update');
+        Route::delete('/{id}', 'destroy')->name('destroy');
+        Route::post('/checkout', 'checkout')->name('checkout');
     });
 
-    // Alamat
-    Route::resource('addresses', AddressController::class);
-    Route::patch('/addresses/{address}', [AddressController::class, 'update'])->name('addresses.update');
-    
-    // Pembayaran (Cukup store dan destroy dulu)
-    Route::post('/payment-methods', [PaymentMethodController::class, 'store'])->name('payment-methods.store');
-    Route::delete('/payment-methods/{id}', [PaymentMethodController::class, 'destroy'])->name('payment-methods.destroy');
-    
-    // Cart Management
-    Route::controller(CartController::class)->group(function () {
-        Route::get('/cart', 'index')->name('cart.index');
-        Route::post('/cart', 'store')->name('cart.store');
-        Route::patch('/cart/{id}', 'update')->name('cart.update');
-        Route::delete('/cart/{id}', 'destroy')->name('cart.destroy');
-        Route::post('/checkout', 'checkout')->name('cart.checkout');
+    // ===== WISHLIST =====
+    Route::controller(WishlistController::class)->prefix('wishlist')->name('wishlist.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/{productId}', 'toggle')->name('toggle');
     });
 
-    Route::get('/wishlist', [WishlistController::class, 'index'])->name('wishlist.index');
-    Route::post('/wishlist/{productId}', [WishlistController::class, 'toggle'])->name('wishlist.toggle');
+    // ===== ORDERS =====
+    Route::controller(OrderController::class)->prefix('my-orders')->name('orders.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::get('/{id}', 'show')->name('show');
+    });
 });
 
 // --------------------------------------------------------------------------
 // ADMIN ONLY ROUTES
 // --------------------------------------------------------------------------
-// Catatan: Jika 'can:admin-access' error, ganti sementara dengan middleware custom atau cek Gate
-Route::middleware(['auth', 'can:admin-access'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
     
-    // Dashboard Utama Admin
-    Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
+    // Check if user is admin
+    Route::middleware('is.admin')->group(function () {
+        
+        // ===== DASHBOARD =====
+        Route::get('/dashboard', [AdminDashboardController::class, 'index'])->name('dashboard');
 
-    // Resources
-    Route::resource('products', AdminProductController::class);
-    Route::resource('categories', AdminCategoryController::class);
-    Route::resource('users', AdminUserController::class); 
-    
-    // Additional Product Routes
-    Route::delete('/product-images/{id}', [AdminProductController::class, 'destroyImage'])->name('product-images.destroy');
-    Route::get('/api/search', [GlobalSearchController::class, 'search'])->name('api.search');
-    
-    // Order Management
-    Route::controller(AdminOrderController::class)->group(function () {
-        Route::get('/orders', 'index')->name('orders.index');
-        Route::get('/orders/{id}', 'show')->name('orders.show');
-        Route::patch('/orders/{order}', 'update')->name('orders.update');
-        Route::delete('/orders/{order}', 'destroy')->name('orders.destroy');
-    });
+        // ===== PRODUCTS =====
+        Route::resource('products', AdminProductController::class);
+        Route::delete('/products/images/{id}', [AdminProductController::class, 'destroyImage'])->name('product-images.destroy');
 
-    // Analytics & Settings
-    Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
-    Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
-    
-    Route::controller(SettingController::class)->group(function () {
-        Route::get('/settings', 'index')->name('settings.index');
-        Route::post('/settings', 'store')->name('settings.store');
-        Route::post('/settings/reset', 'reset')->name('settings.reset');
-    });
-    
-    Route::controller(ReportController::class)->group(function () {
-        Route::get('/reports', 'index')->name('reports.index');
-        Route::get('/reports/excel', 'exportExcel')->name('reports.excel');
-        Route::get('/reports/pdf', 'exportPdf')->name('reports.pdf');
+        // ===== CATEGORIES =====
+        Route::resource('categories', AdminCategoryController::class)->except(['show']);
+
+        // ===== USERS =====
+        Route::resource('users', AdminUserController::class)->except(['create', 'store']);
+
+        // ===== ORDERS =====
+        Route::controller(AdminOrderController::class)->prefix('orders')->name('orders.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/{id}', 'show')->name('show');
+            Route::patch('/{order}', 'update')->name('update');
+            Route::delete('/{order}', 'destroy')->name('destroy');
+        });
+
+        // ===== ANALYTICS & REPORTS =====
+        Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
+        Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
+
+        // ===== SETTINGS =====
+        Route::controller(SettingController::class)->prefix('settings')->name('settings.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/', 'store')->name('store');
+            Route::post('/reset', 'reset')->name('reset');
+        });
+
+        // ===== REPORTS & EXPORT =====
+        Route::controller(ReportController::class)->prefix('reports')->name('reports.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::get('/export/excel', 'exportExcel')->name('export.excel');
+            Route::get('/export/pdf', 'exportPdf')->name('export.pdf');
+        });
+
+        // ===== API SEARCH =====
+        Route::get('/api/search', [GlobalSearchController::class, 'search'])->name('api.search');
     });
 });
 
+// --------------------------------------------------------------------------
+// AUTH ROUTES
+// --------------------------------------------------------------------------
 require __DIR__.'/auth.php';

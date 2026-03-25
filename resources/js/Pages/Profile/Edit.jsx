@@ -4,23 +4,25 @@ import { Head, useForm, Link, router, usePage } from '@inertiajs/react';
 import { 
     User, Mail, ShieldCheck, 
     MapPin, Bell, CreditCard, Sparkles, Zap, Camera, Plus,
-    Trash2, MapPinned, X, Smartphone
+    Trash2, MapPinned, X, Smartphone, Lock, History, Heart, 
+    Settings, Gift, Trash, AlertCircle, Check
 } from 'lucide-react';
 
 // Import Partial AddressCreate secara langsung
 import AddressCreate from './Partials/AddressCreate';
 
 export default function Edit({ auth, addresses = [], paymentMethods = [] }) {
-    // Ambil user dari usePage agar data avatar di Header & Sidebar ikut sinkron otomatis
     const { auth: { user } } = usePage().props;
     
     const [activeTab, setActiveTab] = useState('account');
     const [showPaymentModal, setShowPaymentModal] = useState(false);
+    const [showPasswordModal, setShowPasswordModal] = useState(false);
+    const [show2FAModal, setShow2FAModal] = useState(false);
+    const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
     const [editingAddress, setEditingAddress] = useState(null);
-    const [paymentType, setPaymentType] = useState('card'); // 'card' atau 'ewallet'
-    
-    // State untuk kontrol munculnya form tambah alamat
+    const [paymentType, setPaymentType] = useState('card');
     const [showAddressForm, setShowAddressForm] = useState(false);
+    const [copied, setCopied] = useState(false);
 
     // 1. Form Identity & Avatar
     const { data, setData, post, errors, processing } = useForm({
@@ -29,10 +31,17 @@ export default function Edit({ auth, addresses = [], paymentMethods = [] }) {
         email: user.email || '',
         phone: user.phone || '',               
         avatar: null,
-        _method: 'PATCH', // PENTING: Untuk spoofing method PATCH saat upload file
+        _method: 'PATCH',
     });
 
-    // 2. Form Payment Method
+    // 2. Form Password
+    const passwordForm = useForm({
+        current_password: '',
+        password: '',
+        password_confirmation: '',
+    });
+
+    // 3. Form Payment Method
     const paymentForm = useForm({
         type: 'card',
         brand: '',
@@ -42,10 +51,14 @@ export default function Edit({ auth, addresses = [], paymentMethods = [] }) {
         exp_year: '',
     });
 
-    // Preview state untuk menampilkan gambar sebelum diupload
+    // 4. Form 2FA
+    const twoFAForm = useForm({
+        enable_2fa: user.two_factor_enabled || false,
+    });
+
+    // Preview avatar
     const [preview, setPreview] = useState(user.avatar_url || null);
 
-    // Update preview jika data user dari server berubah (setelah sukses upload)
     useEffect(() => {
         setPreview(user.avatar_url);
     }, [user.avatar_url]);
@@ -53,22 +66,30 @@ export default function Edit({ auth, addresses = [], paymentMethods = [] }) {
     const handleAvatarChange = (e) => {
         const file = e.target.files[0];
         if (file) {
-            setData('avatar', file); // Mengirimkan Object File asli
+            setData('avatar', file);
             setPreview(URL.createObjectURL(file));
         }
     };
 
     const updateProfile = (e) => {
         e.preventDefault();
-        // Pakai post() karena FormData (upload file) lebih stabil di POST
-        // Laravel akan membacanya sebagai PATCH karena ada field _method di useForm
         post(route('profile.update'), { 
             preserveScroll: true, 
-            forceFormData: true, // WAJIB: Agar file tidak dianggap string oleh Laravel
+            forceFormData: true,
             onSuccess: () => {
-                setData('avatar', null); // Bersihkan state file setelah sukses
+                setData('avatar', null);
             },
             onError: (errors) => console.log('Gagal update:', errors),
+        });
+    };
+
+    const updatePassword = (e) => {
+        e.preventDefault();
+        passwordForm.post(route('password.update'), {
+            onSuccess: () => {
+                setShowPasswordModal(false);
+                passwordForm.reset();
+            },
         });
     };
 
@@ -81,7 +102,7 @@ export default function Edit({ auth, addresses = [], paymentMethods = [] }) {
     const handleTypeChange = (type) => {
         setPaymentType(type);
         paymentForm.setData('type', type);
-        paymentForm.setData('brand', ''); // Reset brand saat ganti tipe
+        paymentForm.setData('brand', '');
     };
 
     const submitPayment = (e) => {
@@ -104,6 +125,29 @@ export default function Edit({ auth, addresses = [], paymentMethods = [] }) {
         if (confirm('Hapus metode pembayaran ini?')) {
             router.delete(route('payment-methods.destroy', id));
         }
+    };
+
+    const toggle2FA = (e) => {
+        e.preventDefault();
+        twoFAForm.post(route('two-factor.toggle'), {
+            onSuccess: () => {
+                setShow2FAModal(false);
+            },
+        });
+    };
+
+    const deleteAccount = (e) => {
+        e.preventDefault();
+        if (confirm('PERHATIAN: Akun Anda akan dihapus permanen beserta semua data. Tindakan ini tidak dapat dibatalkan!')) {
+            router.delete(route('profile.destroy'));
+        }
+    };
+
+    const copyReferralCode = () => {
+        const code = user.referral_code || 'REF-' + user.id;
+        navigator.clipboard.writeText(code);
+        setCopied(true);
+        setTimeout(() => setCopied(false), 2000);
     };
 
     return (
@@ -141,33 +185,27 @@ export default function Edit({ auth, addresses = [], paymentMethods = [] }) {
                             </div>
                             <h3 className="text-2xl font-black text-slate-800 uppercase italic leading-none tracking-tighter">{user.name}</h3>
                             <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mt-3 italic">{user.email}</p>
-                            {/* Error Avatar khusus di bawah foto */}
                             {errors.avatar && <p className="text-red-500 text-[9px] font-black uppercase italic mt-2">{errors.avatar}</p>}
                         </div>
 
                         <div className="bg-slate-900 rounded-[2.5rem] p-4 text-white shadow-2xl relative overflow-hidden">
                             <nav className="space-y-1 relative z-10">
-                                <button onClick={() => setActiveTab('account')} className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all ${activeTab === 'account' ? 'bg-white/10 ring-1 ring-white/20' : 'hover:bg-white/5 opacity-50'}`}>
-                                    <div className="flex items-center gap-4">
-                                        <ShieldCheck size={18} className="text-blue-400" />
-                                        <span className="font-bold text-xs uppercase tracking-widest">Account Info</span>
-                                    </div>
-                                </button>
-                                <button onClick={() => setActiveTab('alerts')} className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all ${activeTab === 'alerts' ? 'bg-white/10 ring-1 ring-white/20' : 'hover:bg-white/5 opacity-50'}`}>
-                                    <div className="flex items-center gap-4">
-                                        <Bell size={18} className="text-orange-400" />
-                                        <span className="font-bold text-xs uppercase tracking-widest">Alerts Center</span>
-                                    </div>
-                                </button>
+                                <NavButton icon={<ShieldCheck size={18} />} label="Account Info" active={activeTab === 'account'} onClick={() => setActiveTab('account')} />
+                                <NavButton icon={<Lock size={18} />} label="Security" active={activeTab === 'security'} onClick={() => setActiveTab('security')} />
+                                <NavButton icon={<History size={18} />} label="Order History" active={activeTab === 'orders'} onClick={() => setActiveTab('orders')} />
+                                <NavButton icon={<Heart size={18} />} label="Wishlist" active={activeTab === 'wishlist'} onClick={() => setActiveTab('wishlist')} />
+                                <NavButton icon={<Gift size={18} />} label="Referral" active={activeTab === 'referral'} onClick={() => setActiveTab('referral')} />
+                                <NavButton icon={<Settings size={18} />} label="Preferences" active={activeTab === 'preferences'} onClick={() => setActiveTab('preferences')} />
+                                <NavButton icon={<Bell size={18} />} label="Alerts Center" active={activeTab === 'alerts'} onClick={() => setActiveTab('alerts')} />
                             </nav>
                         </div>
                     </div>
 
                     {/* RIGHT SIDE: Content */}
                     <div className="col-span-12 lg:col-span-8 space-y-8">
-                        {activeTab === 'account' ? (
+                        {activeTab === 'account' && (
                             <div className="space-y-8">
-                                {/* 1. IDENTITY FORM */}
+                                {/* IDENTITY FORM */}
                                 <section className="bg-white p-10 rounded-[3.5rem] border border-slate-50 shadow-sm">
                                     <div className="flex items-center gap-4 mb-10">
                                         <div className="p-4 bg-blue-50 text-blue-600 rounded-[1.5rem]"><User size={24} /></div>
@@ -221,7 +259,7 @@ export default function Edit({ auth, addresses = [], paymentMethods = [] }) {
                                     </form>
                                 </section>
 
-                                {/* 2. ADDRESS LIST */}
+                                {/* ADDRESS LIST */}
                                 <section className="bg-white p-10 rounded-[3.5rem] border border-slate-50 shadow-sm">
                                     <div className="flex items-center justify-between mb-8">
                                         <div className="flex items-center gap-4">
@@ -273,7 +311,7 @@ export default function Edit({ auth, addresses = [], paymentMethods = [] }) {
                                     </div>
                                 </section>
 
-                                {/* 3. PAYMENT LIST */}
+                                {/* PAYMENT LIST */}
                                 <section className="bg-slate-900 p-10 rounded-[3.5rem] text-white relative overflow-hidden shadow-2xl">
                                     <div className="relative z-10">
                                         <div className="flex items-center gap-4 mb-8">
@@ -310,57 +348,302 @@ export default function Edit({ auth, addresses = [], paymentMethods = [] }) {
                                     </div>
                                 </section>
                             </div>
-                        ) : (
+                        )}
+
+                        {activeTab === 'security' && (
+                            <div className="space-y-8">
+                                {/* CHANGE PASSWORD */}
+                                <section className="bg-white p-10 rounded-[3.5rem] border border-slate-50 shadow-sm">
+                                    <div className="flex items-center gap-4 mb-10">
+                                        <div className="p-4 bg-red-50 text-red-600 rounded-[1.5rem]"><Lock size={24} /></div>
+                                        <h4 className="text-xl font-black italic uppercase text-slate-800">Change Password</h4>
+                                    </div>
+                                    <button 
+                                        onClick={() => setShowPasswordModal(true)}
+                                        className="bg-red-600 text-white px-10 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-red-700 transition-all shadow-xl"
+                                    >
+                                        Update Password
+                                    </button>
+                                </section>
+
+                                {/* TWO-FACTOR AUTH */}
+                                <section className="bg-white p-10 rounded-[3.5rem] border border-slate-50 shadow-sm">
+                                    <div className="flex items-center justify-between mb-8">
+                                        <div className="flex items-center gap-4">
+                                            <div className="p-4 bg-purple-50 text-purple-600 rounded-[1.5rem]"><Sparkles size={24} /></div>
+                                            <div>
+                                                <h4 className="text-xl font-black italic uppercase text-slate-800">Two-Factor Authentication</h4>
+                                                <p className="text-[10px] text-slate-400 font-bold mt-1">Tingkatkan keamanan akun dengan 2FA</p>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => setShow2FAModal(true)}
+                                        className={`px-8 py-4 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] transition-all ${user.two_factor_enabled ? 'bg-red-50 text-red-600 hover:bg-red-100' : 'bg-purple-50 text-purple-600 hover:bg-purple-100'}`}
+                                    >
+                                        {user.two_factor_enabled ? 'Disable 2FA' : 'Enable 2FA'}
+                                    </button>
+                                </section>
+
+                                {/* ACCOUNT DELETION */}
+                                <section className="bg-red-50 p-10 rounded-[3.5rem] border-2 border-red-100 shadow-sm">
+                                    <div className="flex items-center gap-4 mb-8">
+                                        <div className="p-4 bg-red-100 text-red-600 rounded-[1.5rem]"><AlertCircle size={24} /></div>
+                                        <div>
+                                            <h4 className="text-xl font-black italic uppercase text-red-800">Delete Account</h4>
+                                            <p className="text-[10px] text-red-600 font-bold mt-1">Tindakan ini tidak dapat dibatalkan</p>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => setShowDeleteAccountModal(true)}
+                                        className="bg-red-600 text-white px-10 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-red-800 transition-all shadow-xl"
+                                    >
+                                        Delete My Account
+                                    </button>
+                                </section>
+                            </div>
+                        )}
+
+                        {activeTab === 'orders' && (
+                            <section className="bg-white p-10 rounded-[3.5rem] border border-slate-50 shadow-sm">
+                                <div className="flex items-center gap-4 mb-10">
+                                    <div className="p-4 bg-blue-50 text-blue-600 rounded-[1.5rem]"><History size={24} /></div>
+                                    <h4 className="text-xl font-black italic uppercase text-slate-800">Order History</h4>
+                                </div>
+                                <Link href={route('orders.index')} className="inline-block bg-slate-900 text-white px-10 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-blue-600 transition-all shadow-xl">
+                                    View All Orders
+                                </Link>
+                            </section>
+                        )}
+
+                        {activeTab === 'wishlist' && (
+                            <section className="bg-white p-10 rounded-[3.5rem] border border-slate-50 shadow-sm">
+                                <div className="flex items-center gap-4 mb-10">
+                                    <div className="p-4 bg-red-50 text-red-600 rounded-[1.5rem]"><Heart size={24} /></div>
+                                    <h4 className="text-xl font-black italic uppercase text-slate-800">My Wishlist</h4>
+                                </div>
+                                <Link href={route('wishlist.index')} className="inline-block bg-slate-900 text-white px-10 py-5 rounded-2xl font-black text-[10px] uppercase tracking-[0.2em] hover:bg-blue-600 transition-all shadow-xl">
+                                    View Wishlist
+                                </Link>
+                            </section>
+                        )}
+
+                        {activeTab === 'referral' && (
+                            <section className="bg-gradient-to-br from-blue-50 to-purple-50 p-10 rounded-[3.5rem] border border-slate-50 shadow-sm">
+                                <div className="flex items-center gap-4 mb-10">
+                                    <div className="p-4 bg-purple-600 text-white rounded-[1.5rem]"><Gift size={24} /></div>
+                                    <div>
+                                        <h4 className="text-xl font-black italic uppercase text-slate-800">Referral Program</h4>
+                                        <p className="text-[10px] text-slate-400 font-bold mt-1">Ajak teman dan dapatkan bonus</p>
+                                    </div>
+                                </div>
+                                <div className="bg-white p-6 rounded-[2rem] border-2 border-slate-100 mb-6">
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase mb-3">Your Referral Code</p>
+                                    <div className="flex items-center gap-4">
+                                        <code className="flex-1 bg-slate-50 p-4 rounded-xl font-black text-lg text-blue-600 text-center">
+                                            {user.referral_code || 'REF-' + user.id}
+                                        </code>
+                                        <button 
+                                            onClick={copyReferralCode}
+                                            className={`px-6 py-4 rounded-xl font-black text-[10px] uppercase transition-all ${copied ? 'bg-emerald-600 text-white' : 'bg-slate-900 text-white hover:bg-blue-600'}`}
+                                        >
+                                            {copied ? '✓ Copied' : 'Copy'}
+                                        </button>
+                                    </div>
+                                </div>
+                                <div className="bg-white p-6 rounded-[2rem] border border-slate-100">
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase mb-4">Bonus Referral</p>
+                                    <ul className="space-y-3">
+                                        <li className="flex items-center gap-3 text-[10px] font-bold text-slate-600">
+                                            <Check size={16} className="text-emerald-600" /> Konsumen: Diskon hingga 20%
+                                        </li>
+                                        <li className="flex items-center gap-3 text-[10px] font-bold text-slate-600">
+                                            <Check size={16} className="text-emerald-600" /> Referrer: Bonus Rp 50.000/referral
+                                        </li>
+                                    </ul>
+                                </div>
+                            </section>
+                        )}
+
+                        {activeTab === 'preferences' && (
+                            <div className="space-y-8">
+                                {/* NOTIFICATION PREFERENCES */}
+                                <section className="bg-white p-10 rounded-[3.5rem] border border-slate-50 shadow-sm">
+                                    <div className="flex items-center gap-4 mb-10">
+                                        <div className="p-4 bg-blue-50 text-blue-600 rounded-[1.5rem]"><Settings size={24} /></div>
+                                        <h4 className="text-xl font-black italic uppercase text-slate-800">Notification Settings</h4>
+                                    </div>
+                                    <div className="space-y-4">
+                                        {['Email Marketing', 'Order Updates', 'Promo & Deals', 'Security Alerts'].map((item, idx) => (
+                                            <label key={idx} className="flex items-center gap-4 p-4 rounded-xl hover:bg-slate-50 cursor-pointer transition-all">
+                                                <input type="checkbox" defaultChecked className="w-5 h-5 rounded cursor-pointer" />
+                                                <span className="font-bold text-slate-700">{item}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </section>
+
+                                {/* PRIVACY PREFERENCES */}
+                                <section className="bg-white p-10 rounded-[3.5rem] border border-slate-50 shadow-sm">
+                                    <div className="flex items-center gap-4 mb-10">
+                                        <div className="p-4 bg-green-50 text-green-600 rounded-[1.5rem]"><ShieldCheck size={24} /></div>
+                                        <h4 className="text-xl font-black italic uppercase text-slate-800">Privacy Settings</h4>
+                                    </div>
+                                    <div className="space-y-4">
+                                        {['Profile Visibility', 'Show in Search', 'Allow Messages'].map((item, idx) => (
+                                            <label key={idx} className="flex items-center gap-4 p-4 rounded-xl hover:bg-slate-50 cursor-pointer transition-all">
+                                                <input type="checkbox" defaultChecked className="w-5 h-5 rounded cursor-pointer" />
+                                                <span className="font-bold text-slate-700">{item}</span>
+                                            </label>
+                                        ))}
+                                    </div>
+                                </section>
+                            </div>
+                        )}
+
+                        {activeTab === 'alerts' && (
                             <div className="bg-white p-24 rounded-[4rem] border border-slate-50 flex flex-col items-center text-center shadow-sm">
                                 <div className="p-8 bg-slate-50 text-slate-200 rounded-full mb-8"><Bell size={56} /></div>
                                 <h3 className="text-3xl font-black italic uppercase text-slate-800">All Caught Up!</h3>
+                                <p className="text-slate-400 text-sm mt-4">Tidak ada notifikasi baru saat ini</p>
                             </div>
                         )}
                     </div>
                 </div>
             </div>
 
-            {/* MODAL: Add Payment Method */}
-            {showPaymentModal && (
-                <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[999] flex items-center justify-center p-6 animate-in fade-in duration-300">
-                    <div className="bg-white rounded-[3.5rem] p-12 w-full max-w-md relative shadow-2xl">
-                        <button onClick={() => setShowPaymentModal(false)} className="absolute top-8 right-8 text-slate-400 hover:text-slate-900"><X size={24} /></button>
-                        <h3 className="text-3xl font-black italic uppercase text-slate-900 mb-8 tracking-tighter">Link Account</h3>
-                        
-                        <div className="flex gap-4 mb-8">
-                            <button type="button" onClick={() => handleTypeChange('card')} className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase border-2 transition-all ${paymentType === 'card' ? 'border-blue-600 bg-blue-50 text-blue-600' : 'border-slate-100 text-slate-400'}`}>Card</button>
-                            <button type="button" onClick={() => handleTypeChange('ewallet')} className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase border-2 transition-all ${paymentType === 'ewallet' ? 'border-blue-600 bg-blue-50 text-blue-600' : 'border-slate-100 text-slate-400'}`}>E-Wallet</button>
-                        </div>
+            {/* MODAL: Change Password */}
+            {showPasswordModal && (
+                <Modal title="Change Password" onClose={() => setShowPasswordModal(false)}>
+                    <form onSubmit={updatePassword} className="space-y-6">
+                        <InputGroup 
+                            label="Current Password" 
+                            type="password"
+                            value={passwordForm.data.current_password} 
+                            onChange={e => passwordForm.setData('current_password', e.target.value)} 
+                            error={passwordForm.errors.current_password}
+                        />
+                        <InputGroup 
+                            label="New Password" 
+                            type="password"
+                            value={passwordForm.data.password} 
+                            onChange={e => passwordForm.setData('password', e.target.value)} 
+                            error={passwordForm.errors.password}
+                        />
+                        <InputGroup 
+                            label="Confirm Password" 
+                            type="password"
+                            value={passwordForm.data.password_confirmation} 
+                            onChange={e => passwordForm.setData('password_confirmation', e.target.value)} 
+                            error={passwordForm.errors.password_confirmation}
+                        />
+                        <button type="submit" disabled={passwordForm.processing} className="w-full bg-slate-900 text-white py-6 rounded-2xl font-black uppercase text-[11px] tracking-widest hover:bg-red-600 transition-all shadow-xl active:scale-95">
+                            {passwordForm.processing ? 'Updating...' : 'Update Password'}
+                        </button>
+                    </form>
+                </Modal>
+            )}
 
-                        <form onSubmit={submitPayment} className="space-y-6">
-                            {paymentType === 'card' ? (
-                                <div className="space-y-6 animate-in slide-in-from-left-4 duration-300">
-                                    <InputGroup label="Card Brand" placeholder="Visa / Mastercard" value={paymentForm.data.brand} onChange={e => paymentForm.setData('brand', e.target.value)} error={paymentForm.errors.brand} />
-                                    <InputGroup label="Last 4 Digits" placeholder="1234" maxLength="4" value={paymentForm.data.last4} onChange={e => paymentForm.setData('last4', e.target.value)} error={paymentForm.errors.last4} />
-                                    <div className="grid grid-cols-2 gap-6">
-                                        <InputGroup label="Exp Month" placeholder="01" value={paymentForm.data.exp_month} onChange={e => paymentForm.setData('exp_month', e.target.value)} />
-                                        <InputGroup label="Exp Year" placeholder="2028" value={paymentForm.data.exp_year} onChange={e => paymentForm.setData('exp_year', e.target.value)} />
-                                    </div>
-                                </div>
-                            ) : (
-                                <div className="space-y-6 animate-in slide-in-from-right-4 duration-300">
-                                    <div className="grid grid-cols-3 gap-3">
-                                        {['DANA', 'OVO', 'GOPAY'].map(wallet => (
-                                            <button key={wallet} type="button" onClick={() => paymentForm.setData('brand', wallet)} className={`py-4 rounded-xl font-black text-[10px] border-2 transition-all ${paymentForm.data.brand === wallet ? 'border-blue-600 bg-blue-50 text-blue-600' : 'bg-slate-50 border-transparent text-slate-400'}`}>{wallet}</button>
-                                        ))}
-                                    </div>
-                                    <InputGroup label="Phone Number" icon={<Smartphone size={18}/>} placeholder="0812xxxx" value={paymentForm.data.phone_number} onChange={e => paymentForm.setData('phone_number', e.target.value)} error={paymentForm.errors.phone_number} />
-                                </div>
-                            )}
-
-                            <button type="submit" disabled={paymentForm.processing} className="w-full bg-slate-900 text-white py-6 rounded-2xl font-black uppercase text-[11px] tracking-widest hover:bg-blue-600 transition-all shadow-xl active:scale-95">
-                                {paymentForm.processing ? 'Syncing...' : 'Securely Save'}
-                            </button>
-                        </form>
+            {/* MODAL: 2FA */}
+            {show2FAModal && (
+                <Modal title="Two-Factor Authentication" onClose={() => setShow2FAModal(false)}>
+                    <div className="space-y-6">
+                        <p className="text-slate-600 text-sm">Aktifkan 2FA untuk membuat akun Anda lebih aman. Anda akan diminta memasukkan kode saat login.</p>
+                        <button 
+                            onClick={toggle2FA}
+                            className={`w-full py-6 rounded-2xl font-black uppercase text-[11px] tracking-widest transition-all shadow-xl ${user.two_factor_enabled ? 'bg-red-600 text-white hover:bg-red-700' : 'bg-purple-600 text-white hover:bg-purple-700'}`}
+                        >
+                            {user.two_factor_enabled ? 'Disable 2FA' : 'Enable 2FA'}
+                        </button>
                     </div>
-                </div>
+                </Modal>
+            )}
+
+            {/* MODAL: Delete Account */}
+            {showDeleteAccountModal && (
+                <Modal title="Delete Account" onClose={() => setShowDeleteAccountModal(false)}>
+                    <div className="space-y-6">
+                        <div className="p-6 bg-red-50 border-2 border-red-100 rounded-[2rem]">
+                            <p className="text-red-800 font-bold text-sm">⚠️ Peringatan: Tindakan ini tidak dapat dibatalkan. Semua data Anda akan dihapus permanen.</p>
+                        </div>
+                        <button 
+                            onClick={deleteAccount}
+                            className="w-full bg-red-600 text-white py-6 rounded-2xl font-black uppercase text-[11px] tracking-widest hover:bg-red-800 transition-all shadow-xl"
+                        >
+                            Yes, Delete My Account
+                        </button>
+                        <button 
+                            onClick={() => setShowDeleteAccountModal(false)}
+                            className="w-full bg-slate-200 text-slate-900 py-6 rounded-2xl font-black uppercase text-[11px] tracking-widest hover:bg-slate-300 transition-all"
+                        >
+                            Cancel
+                        </button>
+                    </div>
+                </Modal>
+            )}
+
+            {/* MODAL: Payment */}
+            {showPaymentModal && (
+                <Modal title="Link Payment Account" onClose={() => setShowPaymentModal(false)}>
+                    <div className="flex gap-4 mb-8">
+                        <button type="button" onClick={() => handleTypeChange('card')} className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase border-2 transition-all ${paymentType === 'card' ? 'border-blue-600 bg-blue-50 text-blue-600' : 'border-slate-100 text-slate-400'}`}>Card</button>
+                        <button type="button" onClick={() => handleTypeChange('ewallet')} className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase border-2 transition-all ${paymentType === 'ewallet' ? 'border-blue-600 bg-blue-50 text-blue-600' : 'border-slate-100 text-slate-400'}`}>E-Wallet</button>
+                    </div>
+
+                    <form onSubmit={submitPayment} className="space-y-6">
+                        {paymentType === 'card' ? (
+                            <div className="space-y-6">
+                                <InputGroup label="Card Brand" placeholder="Visa / Mastercard" value={paymentForm.data.brand} onChange={e => paymentForm.setData('brand', e.target.value)} error={paymentForm.errors.brand} />
+                                <InputGroup label="Last 4 Digits" placeholder="1234" maxLength="4" value={paymentForm.data.last4} onChange={e => paymentForm.setData('last4', e.target.value)} error={paymentForm.errors.last4} />
+                                <div className="grid grid-cols-2 gap-6">
+                                    <InputGroup label="Exp Month" placeholder="01" value={paymentForm.data.exp_month} onChange={e => paymentForm.setData('exp_month', e.target.value)} />
+                                    <InputGroup label="Exp Year" placeholder="2028" value={paymentForm.data.exp_year} onChange={e => paymentForm.setData('exp_year', e.target.value)} />
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="space-y-6">
+                                <div className="grid grid-cols-3 gap-3">
+                                    {['DANA', 'OVO', 'GOPAY'].map(wallet => (
+                                        <button key={wallet} type="button" onClick={() => paymentForm.setData('brand', wallet)} className={`py-4 rounded-xl font-black text-[10px] border-2 transition-all ${paymentForm.data.brand === wallet ? 'border-blue-600 bg-blue-50 text-blue-600' : 'bg-slate-50 border-transparent text-slate-400'}`}>{wallet}</button>
+                                    ))}
+                                </div>
+                                <InputGroup label="Phone Number" icon={<Smartphone size={18}/>} placeholder="0812xxxx" value={paymentForm.data.phone_number} onChange={e => paymentForm.setData('phone_number', e.target.value)} error={paymentForm.errors.phone_number} />
+                            </div>
+                        )}
+
+                        <button type="submit" disabled={paymentForm.processing} className="w-full bg-slate-900 text-white py-6 rounded-2xl font-black uppercase text-[11px] tracking-widest hover:bg-blue-600 transition-all shadow-xl active:scale-95">
+                            {paymentForm.processing ? 'Syncing...' : 'Securely Save'}
+                        </button>
+                    </form>
+                </Modal>
             )}
         </UserLayout>
+    );
+}
+
+function NavButton({ icon, label, active, onClick }) {
+    return (
+        <button 
+            onClick={onClick} 
+            className={`w-full flex items-center justify-between p-4 rounded-2xl transition-all ${active ? 'bg-white/10 ring-1 ring-white/20' : 'hover:bg-white/5 opacity-50'}`}
+        >
+            <div className="flex items-center gap-4">
+                {icon}
+                <span className="font-bold text-xs uppercase tracking-widest">{label}</span>
+            </div>
+        </button>
+    );
+}
+
+function Modal({ title, children, onClose }) {
+    return (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md z-[999] flex items-center justify-center p-6 animate-in fade-in duration-300">
+            <div className="bg-white rounded-[3.5rem] p-12 w-full max-w-md relative shadow-2xl">
+                <button onClick={onClose} className="absolute top-8 right-8 text-slate-400 hover:text-slate-900"><X size={24} /></button>
+                <h3 className="text-3xl font-black italic uppercase text-slate-900 mb-8 tracking-tighter">{title}</h3>
+                {children}
+            </div>
+        </div>
     );
 }
 
