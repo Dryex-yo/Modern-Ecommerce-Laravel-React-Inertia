@@ -11,16 +11,14 @@ import {
 // Import Partial AddressCreate secara langsung
 import AddressCreate from './Partials/AddressCreate';
 
-export default function Edit({ auth, addresses = [], paymentMethods = [] }) {
+export default function Edit({ auth, addresses = [] }) {
     const { auth: { user } } = usePage().props;
     
     const [activeTab, setActiveTab] = useState('account');
-    const [showPaymentModal, setShowPaymentModal] = useState(false);
     const [showPasswordModal, setShowPasswordModal] = useState(false);
     const [show2FAModal, setShow2FAModal] = useState(false);
     const [showDeleteAccountModal, setShowDeleteAccountModal] = useState(false);
     const [editingAddress, setEditingAddress] = useState(null);
-    const [paymentType, setPaymentType] = useState('card');
     const [showAddressForm, setShowAddressForm] = useState(false);
     const [copied, setCopied] = useState(false);
 
@@ -41,17 +39,7 @@ export default function Edit({ auth, addresses = [], paymentMethods = [] }) {
         password_confirmation: '',
     });
 
-    // 3. Form Payment Method
-    const paymentForm = useForm({
-        type: 'card',
-        brand: '',
-        last4: '',
-        phone_number: '',
-        exp_month: '',
-        exp_year: '',
-    });
-
-    // 4. Form 2FA
+    // 3. Form 2FA
     const twoFAForm = useForm({
         enable_2fa: user.two_factor_enabled || false,
     });
@@ -99,21 +87,7 @@ export default function Edit({ auth, addresses = [], paymentMethods = [] }) {
         window.scrollTo({ top: 0, behavior: 'smooth' });
     };
 
-    const handleTypeChange = (type) => {
-        setPaymentType(type);
-        paymentForm.setData('type', type);
-        paymentForm.setData('brand', '');
-    };
 
-    const submitPayment = (e) => {
-        e.preventDefault();
-        paymentForm.post(route('payment-methods.store'), {
-            onSuccess: () => {
-                setShowPaymentModal(false);
-                paymentForm.reset();
-            },
-        });
-    };
 
     const deleteAddress = (id) => {
         if (confirm('Hapus alamat ini dari daftar pengiriman?')) {
@@ -121,11 +95,7 @@ export default function Edit({ auth, addresses = [], paymentMethods = [] }) {
         }
     };
 
-    const deletePayment = (id) => {
-        if (confirm('Hapus metode pembayaran ini?')) {
-            router.delete(route('payment-methods.destroy', id));
-        }
-    };
+
 
     const toggle2FA = (e) => {
         e.preventDefault();
@@ -311,42 +281,7 @@ export default function Edit({ auth, addresses = [], paymentMethods = [] }) {
                                     </div>
                                 </section>
 
-                                {/* PAYMENT LIST */}
-                                <section className="bg-slate-900 p-10 rounded-[3.5rem] text-white relative overflow-hidden shadow-2xl">
-                                    <div className="relative z-10">
-                                        <div className="flex items-center gap-4 mb-8">
-                                            <div className="p-4 bg-white/10 text-white rounded-[1.5rem] backdrop-blur-md"><CreditCard size={24} /></div>
-                                            <h4 className="text-xl font-black italic uppercase tracking-tight">Financial Vault</h4>
-                                        </div>
-                                        
-                                        <div className="space-y-4">
-                                            {paymentMethods.map((method) => (
-                                                <div key={method.id} className="flex items-center justify-between p-6 bg-white/5 border border-white/10 rounded-[1.5rem] hover:bg-white/10 transition-all group">
-                                                    <div className="flex items-center gap-4">
-                                                        <div className="w-12 h-8 bg-slate-800 rounded-lg flex items-center justify-center text-[8px] font-black italic border border-white/10 uppercase text-blue-400">{method.brand}</div>
-                                                        <div>
-                                                            {method.type === 'ewallet' ? (
-                                                                <p className="text-[11px] font-black tracking-[0.1em] text-white">{method.phone_number}</p>
-                                                            ) : (
-                                                                <p className="text-[11px] font-black tracking-[0.2em] text-white">**** **** **** {method.last4}</p>
-                                                            )}
-                                                            <p className="text-[8px] font-bold text-slate-500 uppercase mt-1">
-                                                                {method.type === 'ewallet' ? 'Linked E-Wallet' : `Expires ${method.exp_month}/${method.exp_year}`}
-                                                            </p>
-                                                        </div>
-                                                    </div>
-                                                    <button onClick={() => deletePayment(method.id)} className="text-slate-600 hover:text-red-400 transition-colors"><Trash2 size={16} /></button>
-                                                </div>
-                                            ))}
-                                            <button 
-                                                onClick={() => setShowPaymentModal(true)}
-                                                className="w-full py-5 border-2 border-dashed border-white/10 rounded-[1.5rem] text-[9px] font-black uppercase tracking-[0.3em] text-slate-500 hover:border-white/30 hover:text-white transition-all"
-                                            >
-                                                Add Payment Method
-                                            </button>
-                                        </div>
-                                    </div>
-                                </section>
+
                             </div>
                         )}
 
@@ -582,41 +517,6 @@ export default function Edit({ auth, addresses = [], paymentMethods = [] }) {
                 </Modal>
             )}
 
-            {/* MODAL: Payment */}
-            {showPaymentModal && (
-                <Modal title="Link Payment Account" onClose={() => setShowPaymentModal(false)}>
-                    <div className="flex gap-4 mb-8">
-                        <button type="button" onClick={() => handleTypeChange('card')} className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase border-2 transition-all ${paymentType === 'card' ? 'border-blue-600 bg-blue-50 text-blue-600' : 'border-slate-100 text-slate-400'}`}>Card</button>
-                        <button type="button" onClick={() => handleTypeChange('ewallet')} className={`flex-1 py-3 rounded-xl font-black text-[10px] uppercase border-2 transition-all ${paymentType === 'ewallet' ? 'border-blue-600 bg-blue-50 text-blue-600' : 'border-slate-100 text-slate-400'}`}>E-Wallet</button>
-                    </div>
-
-                    <form onSubmit={submitPayment} className="space-y-6">
-                        {paymentType === 'card' ? (
-                            <div className="space-y-6">
-                                <InputGroup label="Card Brand" placeholder="Visa / Mastercard" value={paymentForm.data.brand} onChange={e => paymentForm.setData('brand', e.target.value)} error={paymentForm.errors.brand} />
-                                <InputGroup label="Last 4 Digits" placeholder="1234" maxLength="4" value={paymentForm.data.last4} onChange={e => paymentForm.setData('last4', e.target.value)} error={paymentForm.errors.last4} />
-                                <div className="grid grid-cols-2 gap-6">
-                                    <InputGroup label="Exp Month" placeholder="01" value={paymentForm.data.exp_month} onChange={e => paymentForm.setData('exp_month', e.target.value)} />
-                                    <InputGroup label="Exp Year" placeholder="2028" value={paymentForm.data.exp_year} onChange={e => paymentForm.setData('exp_year', e.target.value)} />
-                                </div>
-                            </div>
-                        ) : (
-                            <div className="space-y-6">
-                                <div className="grid grid-cols-3 gap-3">
-                                    {['DANA', 'OVO', 'GOPAY'].map(wallet => (
-                                        <button key={wallet} type="button" onClick={() => paymentForm.setData('brand', wallet)} className={`py-4 rounded-xl font-black text-[10px] border-2 transition-all ${paymentForm.data.brand === wallet ? 'border-blue-600 bg-blue-50 text-blue-600' : 'bg-slate-50 border-transparent text-slate-400'}`}>{wallet}</button>
-                                    ))}
-                                </div>
-                                <InputGroup label="Phone Number" icon={<Smartphone size={18}/>} placeholder="0812xxxx" value={paymentForm.data.phone_number} onChange={e => paymentForm.setData('phone_number', e.target.value)} error={paymentForm.errors.phone_number} />
-                            </div>
-                        )}
-
-                        <button type="submit" disabled={paymentForm.processing} className="w-full bg-slate-900 text-white py-6 rounded-2xl font-black uppercase text-[11px] tracking-widest hover:bg-blue-600 transition-all shadow-xl active:scale-95">
-                            {paymentForm.processing ? 'Syncing...' : 'Securely Save'}
-                        </button>
-                    </form>
-                </Modal>
-            )}
         </UserLayout>
     );
 }

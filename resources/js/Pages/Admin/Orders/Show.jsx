@@ -134,8 +134,13 @@ export default function Show({ auth, order }) {
                                 </tbody>
                             </table>
                         </div>
-                        <div className="bg-slate-900 p-8 text-white flex justify-between items-center">
-                            <span className="font-bold opacity-60">Total Amount</span>
+                        <div className="bg-slate-900 p-8 text-white flex justify-between items-center rounded-b-[2.5rem]">
+                            <div className="flex flex-col">
+                                <span className="font-bold opacity-60">Total Amount</span>
+                                {order.payment_method === 'cod' && (
+                                    <span className="text-xs text-slate-400 mt-1 font-medium">Termasuk Biaya COD Rp 5.000</span>
+                                )}
+                            </div>
                             <span className="text-2xl font-black">Rp {new Intl.NumberFormat('id-ID').format(order.total_price)}</span>
                         </div>
                     </div>
@@ -176,6 +181,28 @@ export default function Show({ auth, order }) {
                         <p className="text-sm leading-relaxed text-slate-700 font-medium bg-slate-50 p-4 rounded-xl">
                             {order.shipping_address || 'No address provided.'}
                         </p>
+                    </div>
+
+                    {/* Order Details (Shipping & Payment Methods) */}
+                    <div className="bg-white p-8 rounded-[2.5rem] shadow-sm border border-slate-100">
+                        <h3 className="font-black text-slate-800 mb-6">Order Details</h3>
+                        <div className="space-y-4">
+                            <div>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Metode Pengiriman</p>
+                                <p className="font-bold text-slate-700 uppercase">{order.shipping_method ? order.shipping_method.replace('jnt_', 'J&T ').replace('_', ' ') : '-'}</p>
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Resi Pengiriman</p>
+                                <p className="font-bold text-slate-700">{order.tracking_number || '-'}</p>
+                            </div>
+                            <div>
+                                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Metode Pembayaran</p>
+                                <p className="font-bold text-slate-700 uppercase">
+                                    {order.payment_method === 'transfer' ? 'Transfer Bank' : 
+                                     order.payment_method === 'cod' ? 'Cash on Delivery (COD)' : (order.payment_method || '-')}
+                                </p>
+                            </div>
+                        </div>
                     </div>
 
                     {/* Action Buttons */}

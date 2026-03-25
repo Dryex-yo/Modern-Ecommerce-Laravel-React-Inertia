@@ -8,8 +8,12 @@ export default function AddressCreate({ onClose, address = null }) {
 
     const { data, setData, post, patch, processing, errors, reset } = useForm({
         label: address?.label || '',
+        receiver_name: address?.receiver_name || '',
+        phone_number: address?.phone_number || '',
         full_address: address?.full_address || '',
+        province: address?.province || '',
         city: address?.city || '',
+        district: address?.district || '',
         postal_code: address?.postal_code || '',
         is_default: address?.is_default || false,
     });
@@ -67,25 +71,79 @@ export default function AddressCreate({ onClose, address = null }) {
                         value={data.label}
                         onChange={e => setData('label', e.target.value)}
                     />
-                    <textarea 
-                        className="w-full bg-white border-none rounded-2xl px-6 py-4 font-bold text-slate-700 outline-none ring-2 ring-transparent focus:ring-blue-100 transition-all placeholder:text-slate-300 min-h-[100px]"
-                        placeholder="Full Address"
-                        value={data.full_address}
-                        onChange={e => setData('full_address', e.target.value)}
-                    />
+                    {errors.label && <p className="text-red-500 text-[10px] mt-1 ml-2">{errors.label}</p>}
+
                     <div className="grid grid-cols-2 gap-4">
-                        <input 
-                            className="bg-white border-none rounded-2xl px-6 py-4 font-bold text-slate-700 outline-none ring-2 ring-transparent focus:ring-blue-100 transition-all placeholder:text-slate-300"
-                            placeholder="City"
-                            value={data.city}
-                            onChange={e => setData('city', e.target.value)}
+                        <div>
+                            <input 
+                                className="w-full bg-white border-none rounded-2xl px-6 py-4 font-bold text-slate-700 outline-none ring-2 ring-transparent focus:ring-blue-100 transition-all placeholder:text-slate-300"
+                                placeholder="Receiver Name"
+                                value={data.receiver_name}
+                                onChange={e => setData('receiver_name', e.target.value)}
+                            />
+                            {errors.receiver_name && <p className="text-red-500 text-[10px] mt-1 ml-2">{errors.receiver_name}</p>}
+                        </div>
+                        <div>
+                            <input 
+                                className="w-full bg-white border-none rounded-2xl px-6 py-4 font-bold text-slate-700 outline-none ring-2 ring-transparent focus:ring-blue-100 transition-all placeholder:text-slate-300"
+                                placeholder="Phone Number"
+                                value={data.phone_number}
+                                onChange={e => setData('phone_number', e.target.value)}
+                            />
+                            {errors.phone_number && <p className="text-red-500 text-[10px] mt-1 ml-2">{errors.phone_number}</p>}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <input 
+                                className="w-full bg-white border-none rounded-2xl px-6 py-4 font-bold text-slate-700 outline-none ring-2 ring-transparent focus:ring-blue-100 transition-all placeholder:text-slate-300"
+                                placeholder="Province"
+                                value={data.province}
+                                onChange={e => setData('province', e.target.value)}
+                            />
+                            {errors.province && <p className="text-red-500 text-[10px] mt-1 ml-2">{errors.province}</p>}
+                        </div>
+                        <div>
+                            <input 
+                                className="w-full bg-white border-none rounded-2xl px-6 py-4 font-bold text-slate-700 outline-none ring-2 ring-transparent focus:ring-blue-100 transition-all placeholder:text-slate-300"
+                                placeholder="City"
+                                value={data.city}
+                                onChange={e => setData('city', e.target.value)}
+                            />
+                            {errors.city && <p className="text-red-500 text-[10px] mt-1 ml-2">{errors.city}</p>}
+                        </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <input 
+                                className="w-full bg-white border-none rounded-2xl px-6 py-4 font-bold text-slate-700 outline-none ring-2 ring-transparent focus:ring-blue-100 transition-all placeholder:text-slate-300"
+                                placeholder="District (Kecamatan)"
+                                value={data.district}
+                                onChange={e => setData('district', e.target.value)}
+                            />
+                            {errors.district && <p className="text-red-500 text-[10px] mt-1 ml-2">{errors.district}</p>}
+                        </div>
+                        <div>
+                            <input 
+                                className="w-full bg-white border-none rounded-2xl px-6 py-4 font-bold text-slate-700 outline-none ring-2 ring-transparent focus:ring-blue-100 transition-all placeholder:text-slate-300"
+                                placeholder="Postal Code"
+                                value={data.postal_code}
+                                onChange={e => setData('postal_code', e.target.value)}
+                            />
+                            {errors.postal_code && <p className="text-red-500 text-[10px] mt-1 ml-2">{errors.postal_code}</p>}
+                        </div>
+                    </div>
+
+                    <div>
+                        <textarea 
+                            className="w-full bg-white border-none rounded-2xl px-6 py-4 font-bold text-slate-700 outline-none ring-2 ring-transparent focus:ring-blue-100 transition-all placeholder:text-slate-300 min-h-[100px]"
+                            placeholder="Full Address Details (Street, Building, RT/RW, etc)"
+                            value={data.full_address}
+                            onChange={e => setData('full_address', e.target.value)}
                         />
-                        <input 
-                            className="bg-white border-none rounded-2xl px-6 py-4 font-bold text-slate-700 outline-none ring-2 ring-transparent focus:ring-blue-100 transition-all placeholder:text-slate-300"
-                            placeholder="Postal Code"
-                            value={data.postal_code}
-                            onChange={e => setData('postal_code', e.target.value)}
-                        />
+                        {errors.full_address && <p className="text-red-500 text-[10px] mt-1 ml-2">{errors.full_address}</p>}
                     </div>
                 </div>
 

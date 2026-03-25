@@ -5,6 +5,7 @@ import ResponsiveNavLink from '@/Components/ResponsiveNavLink';
 import { Link, usePage, Head } from '@inertiajs/react';
 import { useState, useEffect } from 'react';
 import ThemeToggle from "@/Components/ThemeToggle";
+import { Home } from 'lucide-react';
 
 export default function AuthenticatedLayout({ header, children }) {
     const user = usePage().props.auth.user;
@@ -54,8 +55,15 @@ export default function AuthenticatedLayout({ header, children }) {
                         </div>
 
                         <div className="hidden sm:ms-6 sm:flex sm:items-center space-x-4">
-                            {/* TOMBOL DARK MODE DISINI */}
-                            <ThemeToggle />
+                        {/* HOME + DARK MODE DISINI */}
+                        <Link 
+                            href="/" 
+                            title="Back to Store"
+                            className="p-2.5 rounded-xl text-gray-500 dark:text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-gray-100 dark:hover:bg-gray-700 transition-all"
+                        >
+                            <Home size={18} />
+                        </Link>
+                        <ThemeToggle minimal />
 
                             <div className="relative ms-3">
                                 <Dropdown>
@@ -102,8 +110,14 @@ export default function AuthenticatedLayout({ header, children }) {
                         </div>
 
                         <div className="-me-2 flex items-center sm:hidden space-x-2">
-                            {/* TOMBOL DARK MODE MOBILE */}
-                            <ThemeToggle />
+                            {/* TOMBOL DARK MODE + HOME MOBILE */}
+                            <Link 
+                                href="/" 
+                                className="p-2 rounded-xl text-gray-400 hover:text-blue-600 dark:hover:text-blue-400 transition-all"
+                            >
+                                <Home size={18} />
+                            </Link>
+                            <ThemeToggle minimal />
                             
                             <button
                                 onClick={() =>

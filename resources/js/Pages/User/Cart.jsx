@@ -1,12 +1,24 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import UserLayout from '@/Layouts/UserLayout';
 import { Head, Link, useForm, router } from '@inertiajs/react';
-import { Trash2, ShoppingBag, ArrowRight, Minus, Plus, ArrowLeft, MapPin } from 'lucide-react';
+import { Trash2, ShoppingBag, ArrowRight, Minus, Plus, ArrowLeft, MapPin, Truck, CreditCard } from 'lucide-react';
 
-export default function Index({ auth, cartItems }) {
+export default function Index({ auth, cartItems, defaultAddress = '', bankName = 'Transfer Bank', shippingOptions = [] }) {
     const { post, processing } = useForm();
-    const [shippingAddress, setShippingAddress] = useState('');
+    const [shippingAddress, setShippingAddress] = useState(defaultAddress);
+    const [shippingMethod, setShippingMethod] = useState('');
+    const [paymentMethod, setPaymentMethod] = useState('');
     const [errors, setErrors] = useState({});
+
+    // Opsi Pembayaran
+    const paymentOptions = [
+        { id: 'transfer', name: bankName, type: 'Bank Transfer' },
+        { id: 'cod', name: 'Cash on Delivery (COD)', type: 'Bayar di Tempat' },
+    ];
+
+    useEffect(() => {
+        setShippingAddress(defaultAddress);
+    }, [defaultAddress]);
 
     // Fungsi Format Rupiah
     const formatIDR = (price) => new Intl.NumberFormat('id-ID', {
@@ -14,7 +26,10 @@ export default function Index({ auth, cartItems }) {
     }).format(price || 0);
 
     // Hitung Total Belanja secara Real-time
-    const total = cartItems.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
+    const subTotal = cartItems.reduce((acc, item) => acc + (item.product.price * item.quantity), 0);
+    const shippingCost = shippingMethod ? shippingOptions.find(opt => opt.id === shippingMethod)?.price || 0 : 0;
+    const codFee = paymentMethod === 'cod' ? 5000 : 0;
+    const total = subTotal + shippingCost + codFee;
 
     // Fungsi Update Quantity (Plus/Minus)
     const updateQty = (id, type) => {
@@ -48,8 +63,20 @@ export default function Index({ auth, cartItems }) {
             return;
         }
 
+        if (!shippingMethod) {
+            setErrors(prev => ({ ...prev, shipping_method: 'Metode pengiriman harus dipilih' }));
+            return;
+        }
+
+        if (!paymentMethod) {
+            setErrors(prev => ({ ...prev, payment_method: 'Metode pembayaran harus dipilih' }));
+            return;
+        }
+
         router.post(route('cart.checkout'), {
-            shipping_address: shippingAddress
+            shipping_address: shippingAddress,
+            shipping_method: shippingMethod,
+            payment_method: paymentMethod
         }, {
             onError: (error) => {
                 setErrors(error);
@@ -151,12 +178,18 @@ export default function Index({ auth, cartItems }) {
                                 
                                 <div className="space-y-5 mb-10 relative z-10">
                                     <div className="flex justify-between text-slate-400 text-[10px] font-black uppercase tracking-widest">
-                                        <span>Total Produk</span>
-                                        <span className="text-white">{cartItems.length} Items</span>
+                                        <span>Total Produk ({cartItems.length} Items)</span>
+                                        <span className="text-white">{formatIDR(subTotal)}</span>
                                     </div>
                                     <div className="flex justify-between text-slate-400 text-[10px] font-black uppercase tracking-widest">
-                                        <span>Biaya Admin</span>
-                                        <span className="text-emerald-400">Gratis</span>
+                                        <span>Biaya Pengiriman</span>
+                                        <span className="text-white">{shippingCost > 0 ? formatIDR(shippingCost) : '-'}</span>
+                                    </div>
+                                    <div className="flex justify-between text-slate-400 text-[10px] font-black uppercase tracking-widest">
+                                        <span>Biaya Admin (COD)</span>
+                                        <span className={codFee > 0 ? "text-white font-bold" : "text-emerald-400"}>
+                                            {codFee > 0 ? formatIDR(codFee) : 'Gratis'}
+                                        </span>
                                     </div>
                                     <div className="h-[1px] bg-slate-800/50 my-6"></div>
                                     <div className="flex flex-col gap-1">
@@ -189,9 +222,96 @@ export default function Index({ auth, cartItems }) {
                                     )}
                                 </div>
 
+                                {/* Shipping Method Selection */}
+                                <div className="mb-8 relative z-10">
+                                    <label className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">
+                                        <Truck size={14} className="text-blue-400" />
+                                        Metode Pengiriman
+                                    </label>
+                                    <div className="space-y-3">
+                                        {shippingOptions.map(opt => (
+                                            <label 
+                                                key={opt.id} 
+                                                className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${shippingMethod === opt.id ? 'border-blue-500 bg-blue-500/10' : 'border-slate-700 bg-slate-800 hover:border-slate-600'}`}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${shippingMethod === opt.id ? 'border-blue-500' : 'border-slate-500'}`}>
+                                                        {shippingMethod === opt.id && <div className="w-2 h-2 rounded-full bg-blue-500" />}
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-white font-bold text-sm tracking-wide">{opt.name}</div>
+                                                        <div className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">Est: {opt.est}</div>
+                                                    </div>
+                                                </div>
+                                                <div className="text-blue-400 font-black text-sm">
+                                                    {formatIDR(opt.price)}
+                                                </div>
+                                                <input 
+                                                    type="radio" 
+                                                    name="shipping_method" 
+                                                    value={opt.id} 
+                                                    className="hidden" 
+                                                    onChange={() => {
+                                                        setShippingMethod(opt.id);
+                                                        setErrors(prev => ({ ...prev, shipping_method: null }));
+                                                    }}
+                                                    checked={shippingMethod === opt.id}
+                                                />
+                                            </label>
+                                        ))}
+                                    </div>
+                                    {errors.shipping_method && (
+                                        <p className="text-red-400 text-[10px] font-bold mt-2">
+                                            {errors.shipping_method}
+                                        </p>
+                                    )}
+                                </div>
+
+                                {/* Payment Method Selection */}
+                                <div className="mb-8 relative z-10">
+                                    <label className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">
+                                        <CreditCard size={14} className="text-blue-400" />
+                                        Metode Pembayaran
+                                    </label>
+                                    <div className="space-y-3">
+                                        {paymentOptions.map(opt => (
+                                            <label 
+                                                key={opt.id} 
+                                                className={`flex items-center justify-between p-4 rounded-xl border-2 cursor-pointer transition-all ${paymentMethod === opt.id ? 'border-blue-500 bg-blue-500/10' : 'border-slate-700 bg-slate-800 hover:border-slate-600'}`}
+                                            >
+                                                <div className="flex items-center gap-3">
+                                                    <div className={`w-4 h-4 rounded-full border-2 flex items-center justify-center ${paymentMethod === opt.id ? 'border-blue-500' : 'border-slate-500'}`}>
+                                                        {paymentMethod === opt.id && <div className="w-2 h-2 rounded-full bg-blue-500" />}
+                                                    </div>
+                                                    <div>
+                                                        <div className="text-white font-bold text-sm tracking-wide">{opt.name}</div>
+                                                        <div className="text-[10px] text-slate-400 font-bold uppercase mt-0.5">{opt.type}</div>
+                                                    </div>
+                                                </div>
+                                                <input 
+                                                    type="radio" 
+                                                    name="payment_method" 
+                                                    value={opt.id} 
+                                                    className="hidden" 
+                                                    onChange={() => {
+                                                        setPaymentMethod(opt.id);
+                                                        setErrors(prev => ({ ...prev, payment_method: null }));
+                                                    }}
+                                                    checked={paymentMethod === opt.id}
+                                                />
+                                            </label>
+                                        ))}
+                                    </div>
+                                    {errors.payment_method && (
+                                        <p className="text-red-400 text-[10px] font-bold mt-2">
+                                            {errors.payment_method}
+                                        </p>
+                                    )}
+                                </div>
+
                                 <button 
                                     onClick={handleCheckout}
-                                    disabled={processing || !shippingAddress.trim()}
+                                    disabled={processing || !shippingAddress.trim() || !shippingMethod || !paymentMethod}
                                     className="w-full bg-blue-600 hover:bg-white hover:text-slate-900 text-white py-6 rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-[11px] flex items-center justify-center gap-3 transition-all active:scale-95 disabled:bg-slate-800 disabled:text-slate-500 shadow-xl shadow-blue-900/20"
                                 >
                                     {processing ? 'Processing...' : 'Selesaikan Pesanan'} 

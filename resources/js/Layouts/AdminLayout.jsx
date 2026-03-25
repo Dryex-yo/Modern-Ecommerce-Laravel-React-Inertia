@@ -3,10 +3,11 @@ import SidebarItem from '@/Components/SidebarItem';
 import { 
     LayoutGrid, Package, ShoppingCart, LogOut, BarChart3,
     Receipt, FileText, Settings, Search, AlertTriangle,
-    Bell, ChevronRight, Loader2, Menu, Users, Layers
+    Bell, ChevronRight, Loader2, Menu, Users, Layers, Home
 } from 'lucide-react';
 import { Link, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
+import ThemeToggle from '@/Components/ThemeToggle';
 
 export default function AdminLayout({ children, user }) {
     const { notifications, settings } = usePage().props;
@@ -15,10 +16,48 @@ export default function AdminLayout({ children, user }) {
     const [isSearching, setIsSearching] = useState(false);
     const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
-    // Notifikasi logic
     const pendingOrders = notifications?.pending_orders_count || 0;
     const lowStock = notifications?.low_stock_count || 0;
     const totalNotif = pendingOrders + lowStock;
+
+    // State untuk mendeteksi notifikasi baru (menyimpan nilai notif sebelumnya)
+    const [prevPendingOrders, setPrevPendingOrders] = useState(pendingOrders);
+
+    // Auto-Polling berdasarkan Pengaturan (Setiap 10 Detik)
+    useEffect(() => {
+        // Cek apakah fitur auto-refresh dihidupkan di pengaturan
+        if (settings?.notif_orders === '1' || settings?.notif_orders === true) {
+            const interval = setInterval(() => {
+                router.reload({ only: ['notifications'], preserveState: true, preserveScroll: true });
+            }, 10000); // Polling per 10 detik
+            
+            return () => clearInterval(interval);
+        }
+    }, [settings?.notif_orders]);
+
+    // Deteksi jika pesanan pending naik (Pesanan Baru Masuk)
+    useEffect(() => {
+        if (pendingOrders > prevPendingOrders) {
+            // Mainkan suara jika diaktifkan (Dashboard Sound Effects)
+            if (settings?.notif_sound === '1' || settings?.notif_sound === true) {
+                const audio = new Audio('/sounds/chaching.mp3'); // Pastikan ini opsional atau buat nada dasar via JS
+                audio.play().catch(e => console.log('Audio blocked by browser, but order received!'));
+            }
+            
+            // Popup Windows / Browser bawaan jika di-approve
+            if (Notification.permission === 'granted') {
+                new Notification('Pesanan Baru Masuk!', {
+                    body: `Ada ${pendingOrders - prevPendingOrders} pesanan baru menunggu proses!`,
+                    icon: '/favicon.ico'
+                });
+            } else if (Notification.permission !== 'denied') {
+                Notification.requestPermission();
+            }
+        }
+        
+        // Simpan nilai terbaru untuk komparasi polling berikutnya
+        setPrevPendingOrders(pendingOrders);
+    }, [pendingOrders]);
 
     // Global Search Debounce
     useEffect(() => {
@@ -176,7 +215,15 @@ export default function AdminLayout({ children, user }) {
                             )}
                         </div>
 
-                        {/* Notifications */}
+                        {/* Home + Theme Toggle */}
+                        <Link 
+                            href="/" 
+                            title="Go to Store" 
+                            className="p-3.5 bg-white rounded-2xl shadow-sm border border-slate-50 text-slate-500 hover:text-blue-600 hover:shadow-md transition-all hover:scale-110 active:scale-95"
+                        >
+                            <Home size={20} />
+                        </Link>
+                        <ThemeToggle minimal />
                         <div className="relative group">
                             <button className="p-3.5 bg-white rounded-2xl shadow-sm border border-slate-50 text-slate-600 hover:text-blue-600 transition-all relative">
                                 <Bell size={20} />

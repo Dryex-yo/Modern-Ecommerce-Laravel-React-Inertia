@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
 import { ShoppingBag, LogOut, Home, User, ShoppingCart, ChevronDown, Settings, Shield, Sparkles } from 'lucide-react';
+import ThemeToggle from '@/Components/ThemeToggle';
 
 export default function UserLayout({ children }) {
     // Ambil user langsung dari usePage().props.auth agar selalu sinkron dengan state global
@@ -51,8 +52,10 @@ export default function UserLayout({ children }) {
                     <NavLink href={route('dashboard')} icon={<User size={16} />} label="My Dashboard" />
                 </div>
 
-                {/* --- PROFILE STAT CARD (Connected to Avatar) --- */}
-                <div className="relative">
+                {/* Right Controls */}
+                <div className="flex items-center gap-3">
+                    <ThemeToggle minimal />
+                    <div className="relative">
                     <button 
                         onClick={() => setIsMenuOpen(!isMenuOpen)}
                         className="flex items-center gap-3 pl-4 pr-2 py-1.5 bg-white border border-slate-100 rounded-2xl hover:shadow-xl hover:shadow-slate-200/50 transition-all duration-300 group"
@@ -124,6 +127,7 @@ export default function UserLayout({ children }) {
                             </div>
                         </>
                     )}
+                    </div>
                 </div>
             </nav>
 

@@ -2,7 +2,7 @@ import React from 'react';
 import { Head, Link, router } from '@inertiajs/react';
 import { ChevronLeft, Package, LogOut } from 'lucide-react';
 
-export default function OrderShow({ auth, order }) {
+export default function OrderShow({ auth, order, bankDetails }) {
 
     const handleLogout = (e) => {
         e.preventDefault();
@@ -45,6 +45,28 @@ export default function OrderShow({ auth, order }) {
                         {new Date(order.created_at).toLocaleDateString('id-ID', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}
                     </p>
                 </div>
+
+                {/* Payment Instructions for Transfer */}
+                {order.status?.toLowerCase() === 'pending' && order.payment_method === 'transfer' && (
+                    <div className="bg-blue-50 border-l-4 border-blue-500 p-6 rounded-[2rem] mb-8 shadow-sm">
+                        <div className="flex gap-4">
+                            <div className="flex-1">
+                                <h3 className="font-black text-blue-900 mb-2">Menunggu Pembayaran</h3>
+                                <p className="text-blue-800 text-sm mb-4">
+                                    Silakan lakukan transfer sesuai dengan total tagihan <strong>{formatIDR(order.total_price)}</strong> ke rekening berikut:
+                                </p>
+                                <div className="bg-white p-5 rounded-2xl border border-blue-100 mb-4 inline-block min-w-[250px] shadow-sm">
+                                    <p className="text-[10px] text-slate-400 font-bold uppercase mb-1">Bank {bankDetails.name}</p>
+                                    <p className="font-black text-2xl text-blue-600 tracking-wider mb-1">{bankDetails.account}</p>
+                                    <p className="text-sm font-bold text-slate-700">a.n. {bankDetails.holder}</p>
+                                </div>
+                                <p className="text-blue-800 text-xs font-bold">
+                                    *Pesanan Anda akan diproses setelah pembayaran dikonfirmasi oleh Admin.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
 
                 {/* Order Items */}
                 <div className="bg-white rounded-[2rem] p-8 border border-slate-100 mb-8">
@@ -99,16 +121,49 @@ export default function OrderShow({ auth, order }) {
                 </div>
 
                 {/* Order Summary */}
-                <div className="bg-white rounded-[2rem] p-8 border border-slate-100 mb-8">
+                <div className="bg-white rounded-[2rem] p-8 border border-slate-100 mb-8 shadow-sm">
+                    <h2 className="font-black text-lg mb-6 uppercase tracking-tight">Ringkasan Pesanan</h2>
                     <div className="space-y-4">
-                        <div className="flex justify-between font-bold">
-                            <span>Status:</span>
-                            <span className={order.status?.toLowerCase() === 'pending' ? 'text-amber-600' : 'text-emerald-600'}>
+                        <div className="flex justify-between font-bold text-sm">
+                            <span className="text-slate-500">Status Pesanan:</span>
+                            <span className={`uppercase font-black ${order.status?.toLowerCase() === 'pending' ? 'text-amber-500' : 'text-emerald-500'}`}>
                                 {order.status}
                             </span>
                         </div>
-                        <div className="flex justify-between font-black text-lg border-t pt-4">
-                            <span>Total:</span>
+
+                        {order.tracking_number && (
+                            <div className="flex justify-between font-bold text-sm">
+                                <span className="text-slate-500">Resi Pengiriman:</span>
+                                <span className="text-slate-800 tracking-wider font-black bg-slate-50 px-3 py-1 rounded-lg border border-slate-100">{order.tracking_number}</span>
+                            </div>
+                        )}
+
+                        {order.shipping_method && (
+                            <div className="flex justify-between font-bold text-sm">
+                                <span className="text-slate-500">Metode Pengiriman:</span>
+                                <span className="text-slate-800 uppercase">{order.shipping_method.replace('jnt_', 'J&T ').replace('_', ' ')}</span>
+                            </div>
+                        )}
+
+                        {order.payment_method && (
+                            <div className="flex justify-between font-bold text-sm">
+                                <span className="text-slate-500">Metode Pembayaran:</span>
+                                <span className="text-slate-800 uppercase">
+                                    {order.payment_method === 'transfer' ? 'Transfer Bank' : 
+                                     order.payment_method === 'cod' ? 'Cash on Delivery (COD)' : order.payment_method}
+                                </span>
+                            </div>
+                        )}
+
+                        {order.payment_method === 'cod' && (
+                            <div className="flex justify-between font-bold text-sm">
+                                <span className="text-slate-500">Biaya Penanganan (COD):</span>
+                                <span className="text-slate-800">Rp 5.000</span>
+                            </div>
+                        )}
+                        
+                        <div className="flex justify-between font-black text-xl border-t border-dashed border-slate-200 pt-5 mt-2">
+                            <span>Total Bayar:</span>
                             <span className="text-blue-600">{formatIDR(order.total_price)}</span>
                         </div>
                     </div>

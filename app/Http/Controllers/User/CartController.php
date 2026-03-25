@@ -20,7 +20,34 @@ class CartController extends Controller
 {
     public function index(Request $request): Response
     {
-        $cartItems = \App\Models\Cart::where('user_id', Auth::id())
+        $user = Auth::user();
+        $defaultAddress = $user->addresses()->where('is_default', true)->first() ?? $user->addresses()->first();
+        $formattedAddress = '';
+        if ($defaultAddress) {
+            $parts = [];
+            if ($defaultAddress->receiver_name) {
+                $namePhone = $defaultAddress->receiver_name;
+                if ($defaultAddress->phone_number) {
+                    $namePhone .= ' (' . $defaultAddress->phone_number . ')';
+                }
+                $parts[] = $namePhone;
+            }
+            if ($defaultAddress->full_address) $parts[] = $defaultAddress->full_address;
+            
+            $area = [];
+            if ($defaultAddress->district) $area[] = 'Kec. ' . $defaultAddress->district;
+            if ($defaultAddress->city) $area[] = $defaultAddress->city;
+            if ($defaultAddress->province) $area[] = 'Prov. ' . $defaultAddress->province;
+            if ($defaultAddress->postal_code) $area[] = $defaultAddress->postal_code;
+            
+            if (count($area) > 0) {
+                $parts[] = implode(', ', $area);
+            }
+            
+            $formattedAddress = implode(' - ', $parts);
+        }
+
+        $cartItems = \App\Models\Cart::where('user_id', $user->id)
             ->with(['product.category']) // TARIK RELASI CATEGORY JUGA
             ->get()
             ->map(function ($item) {
@@ -41,8 +68,30 @@ class CartController extends Controller
                 ];
             });
 
+        $bankName = \App\Models\Setting::get('bank_name');
+
+        // ==== LOGIC ONGKIR DINAMIS J&T ====
+        $origin = strtolower(trim(\App\Models\Setting::get('shipping_origin', 'Jakarta')));
+        $destination = strtolower(trim($defaultAddress?->city ?? ''));
+
+        $baseRate = 10000; // Harga dasar dalam kota
+        if ($origin !== $destination && $destination !== '') {
+            $hash = crc32($destination);
+            $factor = abs($hash % 6) + 1; // 1 sampai 6
+            $baseRate = 10000 + ($factor * 5000); // 15.000 - 40.000 Luar kota
+        }
+
+        $shippingOptions = [
+            ['id' => 'jnt_ez', 'name' => 'J&T EZ (Reguler)', 'price' => $baseRate, 'est' => '2-3 Hari'],
+            ['id' => 'jnt_eco', 'name' => 'J&T ECO (Ekonomi)', 'price' => round($baseRate * 0.7), 'est' => '4-7 Hari'],
+            ['id' => 'jnt_super', 'name' => 'J&T Super (Next Day)', 'price' => round($baseRate * 1.5), 'est' => '1 Hari'],
+        ];
+
         return Inertia::render('User/Cart', [
-            'cartItems' => $cartItems
+            'cartItems' => $cartItems,
+            'defaultAddress' => $formattedAddress,
+            'bankName' => $bankName ? 'Transfer Bank ' . strtoupper($bankName) : 'Transfer Bank',
+            'shippingOptions' => $shippingOptions,
         ]);
     }
 
@@ -87,14 +136,44 @@ class CartController extends Controller
 
     public function checkout(Request $request): RedirectResponse
     {
-        // Validasi shipping address
+        // Validasi shipping address dan method
         $request->validate([
             'shipping_address' => 'required|string|min:10|max:500',
+            'shipping_method' => 'required|in:jnt_ez,jnt_eco,jnt_super',
+            'payment_method' => 'required|in:transfer,cod',
         ], [
             'shipping_address.required' => 'Alamat pengiriman harus diisi',
             'shipping_address.min' => 'Alamat pengiriman minimal 10 karakter',
             'shipping_address.max' => 'Alamat pengiriman maksimal 500 karakter',
+            'shipping_method.required' => 'Metode pengiriman harus dipilih',
+            'shipping_method.in' => 'Metode pengiriman tidak valid',
+            'payment_method.required' => 'Metode pembayaran harus dipilih',
+            'payment_method.in' => 'Metode pembayaran tidak valid',
         ]);
+
+        // ==== LOGIC ONGKIR DINAMIS J&T (Sama dengan Index) ====
+        // Ambil kota user saat ini dari relasi address mereka (anggap alamat pengiriman selalu dari default address)
+        $userObj = Auth::user();
+        $defaultAddressObj = $userObj->addresses()->where('is_default', true)->first() 
+            ?? $userObj->addresses()->first();
+
+        $origin = strtolower(trim(\App\Models\Setting::get('shipping_origin', 'Jakarta')));
+        $destination = strtolower(trim($defaultAddressObj?->city ?? ''));
+        
+        $baseRate = 10000;
+        if ($origin !== $destination && $destination !== '') {
+            $hash = crc32($destination);
+            $factor = abs($hash % 6) + 1; 
+            $baseRate = 10000 + ($factor * 5000); 
+        }
+
+        $shippingCosts = [
+            'jnt_ez' => $baseRate,
+            'jnt_eco' => round($baseRate * 0.7),
+            'jnt_super' => round($baseRate * 1.5),
+        ];
+        $shippingCost = $shippingCosts[$request->shipping_method];
+        $codFee = ($request->payment_method === 'cod') ? 5000 : 0;
 
         // 1. Ambil data keranjang dengan relasi produk
         $cartItems = Cart::where('user_id', Auth::id())->with('product')->get();
@@ -104,25 +183,35 @@ class CartController extends Controller
         }
 
         // 2. Hitung Total Harga (Perhatikan variabel $item)
-        $totalPrice = $cartItems->reduce(function ($acc, $item) {
+        $subTotal = $cartItems->reduce(function ($acc, $item) {
             return $acc + ($item->product->price * $item->quantity);
         }, 0);
+        $totalPrice = $subTotal + $shippingCost + $codFee;
 
         try {
-            DB::transaction(function () use ($cartItems, $totalPrice, $request) {
+            // Kita deklarasi variabel untuk menyimpan objek order nantinya
+            $newOrder = null;
+
+            DB::transaction(function () use ($cartItems, $totalPrice, $request, $shippingCost, &$newOrder) {
+                $trackingNumber = 'RESI-' . strtoupper(Str::random(12));
+
                 // 3. Buat Header Order dengan shipping address dari user
-                $order = Order::create([
+                $newOrder = Order::create([
                     'user_id' => Auth::id(),
                     'order_number' => 'INV-' . strtoupper(Str::random(10)),
                     'total_price' => $totalPrice,
                     'status' => 'pending',
                     'shipping_address' => $request->shipping_address,
+                    'shipping_method' => $request->shipping_method,
+                    'shipping_cost' => $shippingCost,
+                    'payment_method' => $request->payment_method,
+                    'tracking_number' => $trackingNumber,
                 ]);
 
                 // 4. Masukkan ke Detail Order (OrderItem)
                 foreach ($cartItems as $item) {
                     OrderItem::create([
-                        'order_id' => $order->id,
+                        'order_id' => $newOrder->id,
                         'product_id' => $item->product_id,
                         'quantity' => $item->quantity,
                         'price' => $item->product->price,
@@ -136,7 +225,7 @@ class CartController extends Controller
                 Cart::where('user_id', Auth::id())->delete();
             });
 
-            return redirect()->route('dashboard')->with('message', 'Checkout Berhasil!');
+            return redirect()->route('orders.show', $newOrder->id)->with('message', 'Checkout Berhasil!');
 
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());

@@ -71,14 +71,14 @@ export default function Index({ auth, settings }) {
                 </div>
             )}
 
-            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10">
+            <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-6 mb-10 relative z-10">
                 <div>
-                    <h2 className="text-3xl font-black text-slate-800 tracking-tight">System Settings</h2>
-                    <p className="text-sm text-slate-400 font-medium">Konfigurasi pusat kendali operasional toko Anda.</p>
+                    <h2 className="text-4xl font-black text-slate-800 tracking-tighter bg-clip-text text-transparent bg-gradient-to-r from-slate-800 to-blue-800">System Settings</h2>
+                    <p className="text-sm text-slate-500 font-bold mt-1">Konfigurasi pusat kendali operasional toko Anda.</p>
                 </div>
                 
-                {/* Tab Switcher - Sekarang ada 3 Tab */}
-                <div className="flex bg-slate-100 p-1.5 rounded-3xl w-fit border border-slate-200/50 overflow-x-auto max-w-full">
+                {/* Modern Pill Tab Switcher */}
+                <div className="flex bg-slate-900/5 p-1.5 rounded-[2rem] w-fit border border-slate-200/50 backdrop-blur-xl overflow-x-auto max-w-full shadow-inner relative">
                     <TabButton active={activeTab === 'general'} onClick={() => setActiveTab('general')} icon={<SettingsIcon size={14}/>} label="GENERAL" />
                     <TabButton active={activeTab === 'notif'} onClick={() => setActiveTab('notif')} icon={<Bell size={14}/>} label="PREFERENCES" />
                     <TabButton active={activeTab === 'payment'} onClick={() => setActiveTab('payment')} icon={<CreditCard size={14}/>} label="PAYMENTS" />
@@ -89,8 +89,8 @@ export default function Index({ auth, settings }) {
 
                     {/* --- TAB 1: GENERAL --- */}
                     {activeTab === 'general' && (
-                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
-                        <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-6 md:p-10">
+                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                        <div className="bg-white rounded-[3rem] shadow-xl shadow-slate-200/40 ring-1 ring-slate-100 p-8 md:p-12 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">
                             {/* Header Bagian */}
                             <div className="flex items-center gap-3 mb-8 border-b border-slate-50 pb-6">
                                 <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-2xl flex items-center justify-center">
@@ -233,9 +233,9 @@ export default function Index({ auth, settings }) {
 
                 {/* --- TAB 2: PREFERENCES & NOTIFICATIONS --- */}
                 {activeTab === 'notif' && (
-                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">                        
+                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">                        
                         {/* Section 1: Admin Alerts */}
-                        <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-6 md:p-10">                            <div className="flex items-center gap-3 mb-8 border-b border-slate-50 pb-6">
+                        <div className="bg-white rounded-[3rem] shadow-xl shadow-slate-200/40 ring-1 ring-slate-100 p-8 md:p-12 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">                            <div className="flex items-center gap-3 mb-8 border-b border-slate-50 pb-6">
                                 <div className="w-12 h-12 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center">
                                     <Bell size={24}/>
                                 </div>
@@ -312,8 +312,9 @@ export default function Index({ auth, settings }) {
 
                 {/* --- TAB 3: PAYMENTS & SHIPPING (BARU) --- */}
                 {activeTab === 'payment' && (
-                    <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">                        {/* Bank Account Info */}
-                            <div className="bg-white rounded-[2.5rem] shadow-sm border border-slate-100 p-6 md:p-10">                            <div className="flex items-center gap-3 mb-8 border-b border-slate-50 pb-6">
+                    <div className="space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
+                        {/* Bank Account Info */}
+                        <div className="bg-white rounded-[3rem] shadow-xl shadow-slate-200/40 ring-1 ring-slate-100 p-8 md:p-12 hover:shadow-2xl hover:-translate-y-1 transition-all duration-300">                            <div className="flex items-center gap-3 mb-8 border-b border-slate-50 pb-6">
                                 <div className="w-12 h-12 bg-amber-50 text-amber-600 rounded-2xl flex items-center justify-center"><Landmark size={24}/></div>
                                 <div>
                                     <h3 className="font-black text-slate-800">Bank Transfer Info</h3>
@@ -349,19 +350,21 @@ export default function Index({ auth, settings }) {
                 )}  
 
                 {/* Save Button */}
-                <div className="mt-12 flex flex-col-reverse md:flex-row items-center justify-end gap-4 pb-20">
-                    <button disabled={processing} className="bg-slate-900 text-white px-12 py-5 rounded-[2rem] font-black text-lg hover:bg-blue-600 transition-all shadow-xl shadow-slate-200 flex items-center gap-3">
-                        <Save size={22} />
+                <div className="mt-12 flex flex-col-reverse md:flex-row items-center justify-end gap-6 pb-20 relative z-10 animate-in fade-in slide-in-from-bottom-10 duration-1000">
+                    <button disabled={processing} className="bg-slate-900 text-white px-14 py-6 rounded-[2.5rem] font-black text-[12px] uppercase tracking-widest hover:bg-blue-600 transition-all shadow-[0_10px_40px_-10px_rgba(0,0,0,0.5)] hover:shadow-[0_0_40px_rgba(37,99,235,0.6)] hover:-translate-y-1 active:scale-95 flex items-center gap-4 group">
+                        <div className="p-2 bg-white/20 rounded-full group-hover:scale-110 transition-transform">
+                            <Save size={18} />
+                        </div>
                         {processing ? 'Saving...' : 'Update System'}
                     </button>
 
                     <button 
                         type="button"
                         onClick={handleReset}
-                        className="px-6 py-2.5 bg-rose-50 text-rose-600 rounded-2xl font-bold text-sm hover:bg-rose-100 transition-all border border-rose-200 flex items-center gap-2"
+                        className="px-8 py-4 bg-white text-rose-500 rounded-[2rem] font-black text-[10px] uppercase tracking-widest hover:bg-rose-50 transition-all border-2 border-rose-100 flex items-center gap-3 hover:-translate-y-1 hover:shadow-xl hover:shadow-rose-100 active:scale-95"
                         >
-                        <RotateCcw size={18} /> {/* Import icon RotateCcw dari lucide-react */}
-                        Reset to Default
+                        <RotateCcw size={16} /> 
+                        Factory Reset
                     </button>
                 </div>
             </form>
@@ -372,22 +375,28 @@ export default function Index({ auth, settings }) {
 // Komponen Pembantu agar kode bersih
 function TabButton({ active, onClick, icon, label }) {
     return (
-        <button onClick={onClick} className={`flex items-center gap-2 px-6 py-2.5 rounded-2xl text-[10px] font-black transition-all ${active ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-400 hover:text-slate-600'}`}>
-            {icon} {label}
+        <button type="button" onClick={onClick} className={`relative flex items-center gap-3 px-8 py-4 rounded-[1.5rem] text-[10px] uppercase tracking-[0.2em] font-black transition-all duration-300 z-10 overflow-hidden ${active ? 'text-white shadow-lg shadow-blue-500/30' : 'text-slate-500 hover:text-slate-800'}`}>
+            {active && (
+                <div className="absolute inset-0 bg-blue-600 rounded-[1.5rem] -z-10 animate-in zoom-in-95 duration-200"></div>
+            )}
+            <div className={`transition-transform duration-300 ${active ? 'scale-110' : ''}`}>
+                {icon}
+            </div>
+            {label}
         </button>
     );
 }
 
 function InputField({ label, value, onChange, placeholder }) {
     return (
-        <div className="space-y-2">
-            <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">{label}</label>
+        <div className="space-y-2 group">
+            <label className="text-[10px] font-black text-slate-400 group-focus-within:text-blue-600 uppercase tracking-widest ml-2 transition-colors">{label}</label>
             <input 
                 type="text" 
                 value={value} 
                 onChange={e => onChange(e.target.value)} 
                 placeholder={placeholder}
-                className="w-full px-6 py-4 bg-slate-50 border-none rounded-2xl focus:ring-4 focus:ring-blue-50 transition-all font-bold text-slate-700 placeholder:text-slate-300" 
+                className="w-full px-6 py-4 bg-slate-50 border-2 border-transparent focus:bg-white rounded-3xl focus:border-blue-200 focus:ring-4 focus:ring-blue-50 focus:scale-[1.01] hover:bg-slate-100 transition-all duration-300 font-bold text-slate-700 placeholder:text-slate-300 shadow-inner focus:shadow-xl focus:shadow-blue-100/50" 
             />
         </div>
     );
@@ -395,17 +404,19 @@ function InputField({ label, value, onChange, placeholder }) {
 
 function PreferenceToggle({ title, description, icon, checked, onChange }) {
     return (
-        <div className="flex items-center justify-between p-6 bg-slate-50/50 rounded-[2rem] border border-transparent hover:border-blue-100 transition-all group">
-            <div className="flex items-center gap-5">
-                <div className="w-12 h-12 bg-white rounded-2xl flex items-center justify-center shadow-sm group-hover:scale-110 transition-transform">{icon}</div>
+        <div className="flex items-center justify-between p-8 bg-slate-50/80 rounded-[2.5rem] border-2 border-transparent hover:border-blue-100 hover:bg-white hover:shadow-xl hover:shadow-blue-50 transition-all duration-300 group cursor-pointer" onClick={() => onChange(!checked)}>
+            <div className="flex items-center gap-6">
+                <div className={`w-14 h-14 rounded-[1.5rem] flex items-center justify-center shadow-md transition-all duration-500 group-hover:scale-110 group-hover:rotate-3 ${checked ? 'bg-blue-600 text-white shadow-blue-500/30' : 'bg-white text-slate-400 group-hover:text-blue-500'}`}>
+                    {icon}
+                </div>
                 <div>
-                    <h4 className="text-sm font-bold text-slate-700">{title}</h4>
-                    <p className="text-[11px] text-slate-400 font-medium">{description}</p>
+                    <h4 className="text-sm font-black text-slate-800 tracking-tight group-hover:text-blue-600 transition-colors duration-300">{title}</h4>
+                    <p className="text-[11px] text-slate-400 font-bold mt-1 pr-4">{description}</p>
                 </div>
             </div>
-            <label className="relative inline-flex items-center cursor-pointer">
-                <input type="checkbox" className="sr-only peer" checked={checked} onChange={e => onChange(e.target.checked)} />
-                <div className="w-14 h-7 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:rounded-full after:h-[20px] after:w-[22px] after:transition-all peer-checked:bg-blue-600"></div>
+            <label className="relative inline-flex items-center cursor-pointer pointer-events-none">
+                <input type="checkbox" className="sr-only peer" checked={checked} readOnly />
+                <div className="w-16 h-8 bg-slate-200 peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[4px] after:left-[4px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-[24px] after:w-[24px] after:transition-all peer-checked:bg-blue-600 peer-checked:shadow-lg peer-checked:shadow-blue-500/40"></div>
             </label>
         </div>
     );

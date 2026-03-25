@@ -32,6 +32,11 @@ class OrderController extends Controller
 
         return Inertia::render('User/Orders/Show', [
             'order' => $order,
+            'bankDetails' => [
+                'name' => \App\Models\Setting::get('bank_name', 'Bank Default'),
+                'account' => \App\Models\Setting::get('bank_account', '1234567890'),
+                'holder' => \App\Models\Setting::get('bank_holder', 'Pemilik Rekening'),
+            ],
         ]);
     }
 }

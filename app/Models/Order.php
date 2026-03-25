@@ -15,7 +15,11 @@ class Order extends Model
         'order_number', 
         'total_price', 
         'status', 
-        'shipping_address'
+        'shipping_address',
+        'shipping_method',
+        'shipping_cost',
+        'payment_method',
+        'tracking_number'
     ];
 
     // Relasi: Order ini milik siapa?

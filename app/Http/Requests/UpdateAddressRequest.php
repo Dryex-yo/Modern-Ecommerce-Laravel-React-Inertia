@@ -30,8 +30,12 @@ class UpdateAddressRequest extends FormRequest
     {
         return [
             'label' => 'required|string|max:100',
+            'receiver_name' => 'required|string|max:100',
+            'phone_number' => 'required|string|max:20|regex:/^[0-9\s\-\+]+$/',
             'full_address' => 'required|string|max:500|min:10',
+            'province' => 'required|string|max:100',
             'city' => 'required|string|max:100',
+            'district' => 'required|string|max:100',
             'postal_code' => 'required|string|max:20|regex:/^[0-9\s\-]+$/',
             'is_default' => 'nullable|boolean',
         ];
@@ -45,11 +49,20 @@ class UpdateAddressRequest extends FormRequest
         return [
             'label.required' => 'Label alamat wajib diisi',
             'label.max' => 'Label alamat maksimal 100 karakter',
+            'receiver_name.required' => 'Nama penerima wajib diisi',
+            'receiver_name.max' => 'Nama penerima maksimal 100 karakter',
+            'phone_number.required' => 'Nomor telepon wajib diisi',
+            'phone_number.max' => 'Nomor telepon maksimal 20 karakter',
+            'phone_number.regex' => 'Format nomor telepon tidak valid',
             'full_address.required' => 'Alamat lengkap wajib diisi',
             'full_address.min' => 'Alamat lengkap minimal 10 karakter',
             'full_address.max' => 'Alamat lengkap maksimal 500 karakter',
+            'province.required' => 'Provinsi wajib diisi',
+            'province.max' => 'Nama provinsi maksimal 100 karakter',
             'city.required' => 'Kota wajib diisi',
             'city.max' => 'Nama kota maksimal 100 karakter',
+            'district.required' => 'Kecamatan/Kabupaten wajib diisi',
+            'district.max' => 'Nama kecamatan/kabupaten maksimal 100 karakter',
             'postal_code.required' => 'Kode pos wajib diisi',
             'postal_code.max' => 'Kode pos maksimal 20 karakter',
             'postal_code.regex' => 'Kode pos hanya boleh berisi angka, spasi, dan tanda hubung',
