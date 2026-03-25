@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import UserLayout from '@/Layouts/UserLayout';
 import { Head, Link, useForm, router } from '@inertiajs/react';
-import { Trash2, ShoppingBag, ArrowRight, Minus, Plus, ArrowLeft } from 'lucide-react';
+import { Trash2, ShoppingBag, ArrowRight, Minus, Plus, ArrowLeft, MapPin } from 'lucide-react';
 
 export default function Index({ auth, cartItems }) {
     const { post, processing } = useForm();
+    const [shippingAddress, setShippingAddress] = useState('');
+    const [errors, setErrors] = useState({});
 
     // Fungsi Format Rupiah
     const formatIDR = (price) => new Intl.NumberFormat('id-ID', {
@@ -33,7 +35,26 @@ export default function Index({ auth, cartItems }) {
     // Fungsi Checkout
     const handleCheckout = (e) => {
         e.preventDefault();
-        post(route('cart.checkout'));
+        setErrors({});
+
+        // Validasi shipping address
+        if (!shippingAddress.trim()) {
+            setErrors({ shipping_address: 'Alamat pengiriman harus diisi' });
+            return;
+        }
+
+        if (shippingAddress.trim().length < 10) {
+            setErrors({ shipping_address: 'Alamat pengiriman minimal 10 karakter' });
+            return;
+        }
+
+        router.post(route('cart.checkout'), {
+            shipping_address: shippingAddress
+        }, {
+            onError: (error) => {
+                setErrors(error);
+            }
+        });
     };
 
     return (
@@ -146,9 +167,31 @@ export default function Index({ auth, cartItems }) {
                                     </div>
                                 </div>
 
+                                {/* Shipping Address Input */}
+                                <div className="mb-6 relative z-10">
+                                    <label className="flex items-center gap-2 text-[10px] font-black uppercase text-slate-400 tracking-widest mb-3">
+                                        <MapPin size={14} className="text-blue-400" />
+                                        Alamat Pengiriman
+                                    </label>
+                                    <textarea
+                                        value={shippingAddress}
+                                        onChange={(e) => setShippingAddress(e.target.value)}
+                                        placeholder="Jl. Contoh No. 123, Kelurahan, Kecamatan, Kota, Provinsi 12345"
+                                        className={`w-full p-3 rounded-xl bg-slate-800 text-white placeholder-slate-500 border-2 ${
+                                            errors.shipping_address ? 'border-red-500' : 'border-slate-700'
+                                        } focus:outline-none focus:border-blue-400 resize-none text-sm`}
+                                        rows="3"
+                                    />
+                                    {errors.shipping_address && (
+                                        <p className="text-red-400 text-[10px] font-bold mt-2">
+                                            {errors.shipping_address}
+                                        </p>
+                                    )}
+                                </div>
+
                                 <button 
                                     onClick={handleCheckout}
-                                    disabled={processing}
+                                    disabled={processing || !shippingAddress.trim()}
                                     className="w-full bg-blue-600 hover:bg-white hover:text-slate-900 text-white py-6 rounded-[1.5rem] font-black uppercase tracking-[0.2em] text-[11px] flex items-center justify-center gap-3 transition-all active:scale-95 disabled:bg-slate-800 disabled:text-slate-500 shadow-xl shadow-blue-900/20"
                                 >
                                     {processing ? 'Processing...' : 'Selesaikan Pesanan'} 

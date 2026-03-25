@@ -80,6 +80,49 @@ class ProfileController extends Controller
     }
 
     /**
+     * Update the user's password.
+     */
+    public function updatePassword(Request $request): RedirectResponse
+    {
+        $validated = $request->validate([
+            'current_password' => 'required|current_password',
+            'password' => 'required|string|min:8|confirmed',
+        ], [
+            'current_password.current_password' => 'Password saat ini tidak sesuai',
+            'password.min' => 'Password minimal 8 karakter',
+            'password.confirmed' => 'Password tidak cocok dengan konfirmasi',
+        ]);
+
+        $request->user()->update([
+            'password' => bcrypt($validated['password']),
+        ]);
+
+        return redirect()->back()->with('success', 'Password berhasil diperbarui!');
+    }
+
+    /**
+     * Toggle Two Factor Authentication.
+     */
+    public function toggle2FA(Request $request): RedirectResponse
+    {
+        $user = $request->user();
+        
+        // Toggle two_factor_enabled field (jika ada di users table)
+        // Jika field belum ada, tambahkan migration terlebih dahulu
+        if (!isset($user->two_factor_enabled)) {
+            // Fallback: gunakan field lain atau buat logic alternatif
+            return redirect()->back()->with('error', 'Two-Factor Authentication belum dikonfigurasi');
+        }
+
+        $user->update([
+            'two_factor_enabled' => !$user->two_factor_enabled,
+        ]);
+
+        $status = $user->two_factor_enabled ? 'diaktifkan' : 'dinonaktifkan';
+        return redirect()->back()->with('success', "Two-Factor Authentication {$status}!");
+    }
+
+    /**
      * Delete the user's account.
      */
     public function destroy(Request $request): RedirectResponse

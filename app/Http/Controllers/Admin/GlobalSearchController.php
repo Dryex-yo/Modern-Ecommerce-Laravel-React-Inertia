@@ -15,28 +15,31 @@ class GlobalSearchController extends Controller
     {
         $query = $request->input('q');
 
-        if (!$query) {
+        if (!$query || strlen($query) < 2) {
             return response()->json([]);
         }
 
-        // Cari di Produk
-        $products = Product::where('name', 'LIKE', "%{$query}%")
+        // Escape dan sanitize input menggunakan parameter binding
+        $searchTerm = "%{$query}%";
+
+        // Cari di Produk - menggunakan parameter binding
+        $products = Product::where('name', 'LIKE', $searchTerm)
             ->limit(5)
             ->get(['id', 'name as title'])
-            ->map(fn($item) => [...$item->toArray(), 'type' => 'Product', 'url' => route('products.edit', $item->id)]);
+            ->map(fn($item) => [...$item->toArray(), 'type' => 'Product', 'url' => route('admin.products.edit', $item->id)]);
 
-        // Cari di Customer
+        // Cari di Customer - menggunakan parameter binding
         $customers = User::where('role', 'user')
-            ->where('name', 'LIKE', "%{$query}%")
+            ->where('name', 'LIKE', $searchTerm)
             ->limit(5)
             ->get(['id', 'name as title'])
-            ->map(fn($item) => [...$item->toArray(), 'type' => 'Customer', 'url' => '#']); // Sesuaikan route user jika ada
+            ->map(fn($item) => [...$item->toArray(), 'type' => 'Customer', 'url' => route('admin.users.edit', $item->id)]);
 
-        // Cari di Order
-        $orders = Order::where('id', 'LIKE', "%{$query}%")
+        // Cari di Order - menggunakan CAST untuk safety
+        $orders = Order::whereRaw('CAST(id AS CHAR) LIKE ?', [$searchTerm])
             ->limit(5)
             ->get(['id'])
-            ->map(fn($item) => ['id' => $item->id, 'title' => "Order #ORD-{$item->id}", 'type' => 'Order', 'url' => route('orders.index')]);
+            ->map(fn($item) => ['id' => $item->id, 'title' => "Order #ORD-{$item->id}", 'type' => 'Order', 'url' => route('admin.orders.show', $item->id)]);
 
         // Gabungkan semua hasil
         $results = $products->concat($customers)->concat($orders);

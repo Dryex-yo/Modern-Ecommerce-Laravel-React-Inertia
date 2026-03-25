@@ -6,14 +6,16 @@ use App\Models\Order;
 use App\Models\Wishlist;
 use App\Models\Product;
 use App\Models\User;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Support\Facades\Log; // Tambahkan ini
+use Illuminate\Support\Facades\Log;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class DashboardController extends Controller
 {
-    public function index()
+    public function index(): Response|RedirectResponse
     {
         /** @var User $user */ // Penting: Biar VS Code gak merah di method update()
         $user = Auth::user();
@@ -66,7 +68,7 @@ class DashboardController extends Controller
         ]);
     }
 
-    private function getRecentActivity($user): array
+    private function getRecentActivity(User $user): array
     {
         try {
             return Order::where('user_id', $user->id)
@@ -83,7 +85,7 @@ class DashboardController extends Controller
         }
     }
 
-    private function getRecentOrders($user): array
+    private function getRecentOrders(User $user): array
     {
         try {
             return Order::where('user_id', $user->id)
@@ -114,7 +116,7 @@ class DashboardController extends Controller
             ->toArray();
     }
 
-    private function calculateAccountHealth($user): int
+    private function calculateAccountHealth(User $user): int
     {
         $score = 0;
         $criteria = [

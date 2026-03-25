@@ -2,35 +2,48 @@
 
 namespace App\Http\Controllers;
 
-use Illuminate\Http\Request;
+use App\Http\Requests\StorePaymentMethodRequest;
+use App\Services\PaymentMethodService;
+use Illuminate\Http\RedirectResponse;
 use App\Models\PaymentMethod;
 use Illuminate\Support\Facades\Auth;
-use Inertia\Inertia;
 
 class PaymentMethodController extends Controller
 {
-    public function store(Request $request)
-    {
-        $validated = $request->validate([
-            'type' => 'required|in:card,ewallet',
-            'brand' => 'required|string', // Visa, DANA, OVO, dll
-            'last4' => 'nullable|string|size:4', // Hanya untuk kartu
-            'phone_number' => 'nullable|string', // Hanya untuk ewallet
-            'exp_month' => 'nullable|string',
-            'exp_year' => 'nullable|string',
-        ]);
+    public function __construct(private PaymentMethodService $paymentMethodService)
+    {}
 
-        $request->user()->paymentMethods()->create($validated);
+    public function store(StorePaymentMethodRequest $request): RedirectResponse
+    {
+        $user = Auth::user();
+        
+        if (!$user) {
+            return back()->with('error', 'User tidak terautentikasi.');
+        }
+
+        $this->paymentMethodService->createPaymentMethod(
+            $user,
+            $request->validated()
+        );
 
         return back()->with('success', 'Metode pembayaran berhasil ditautkan!');
     }
 
-    public function destroy($id)
+    public function destroy(int $id): RedirectResponse
     {
         $user = Auth::user();
         
-        $user->paymentMethods()->findOrFail($id)->delete();
+        if (!$user) {
+            return back()->with('error', 'User tidak terautentikasi.');
+        }
+
+        // Get payment method with ownership check (only user's own methods)
+        $paymentMethod = PaymentMethod::where('id', $id)
+            ->where('user_id', $user->id)
+            ->firstOrFail();
+
+        $this->paymentMethodService->deletePaymentMethod($paymentMethod);
         
-        return back();
+        return back()->with('success', 'Metode pembayaran berhasil dihapus!');
     }
 }

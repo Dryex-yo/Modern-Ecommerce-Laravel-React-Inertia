@@ -12,8 +12,9 @@ class AnalyticsController extends Controller
 {
     public function index(Request $request)
     {
-        // Ambil input range, default ke 30days agar lebih update
-        $range = $request->input('range', '30days');
+        // Validasi input range untuk mencegah injection - WHITELIST approach
+        $validRanges = ['7days', '30days', '90days', '6months', 'thisyear', 'all'];
+        $range = in_array($request->input('range'), $validRanges) ? $request->input('range') : '30days';
 
         $query = Order::where('status', 'completed');
 
@@ -48,12 +49,17 @@ class AnalyticsController extends Controller
 
         // --- DATA CHART ---
         // Atur format tanggal di sumbu X agar sesuai dengan range yang dipilih
-        $dateFormat = match ($range) {
-            '7days', '30days' => '%d %b',      // Contoh: 23 Mar
-            '90days', '6months' => '%b %y',   // Contoh: Mar 26
-            'thisyear', 'all' => '%b',        // Contoh: Jan, Feb
-            default => '%d %b',
-        };
+        // SAFE: Menggunakan whitelist yang ketat untuk mencegah SQL injection
+        $dateFormatMap = [
+            '7days'   => '%d %b',      // Contoh: 23 Mar
+            '30days'  => '%d %b',      // Contoh: 23 Mar
+            '90days'  => '%b %y',      // Contoh: Mar 26
+            '6months' => '%b %y',      // Contoh: Mar 26
+            'thisyear'=> '%b',         // Contoh: Jan, Feb
+            'all'     => '%b',         // Contoh: Jan, Feb
+        ];
+        
+        $dateFormat = $dateFormatMap[$range] ?? '%d %b';
 
         $salesChartData = (clone $query)
             ->select(

@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
+use Inertia\Response;
 use Illuminate\Support\Facades\Auth;
 
 class AdminOrderController extends Controller
@@ -13,7 +15,7 @@ class AdminOrderController extends Controller
     /**
      * Menampilkan daftar semua pesanan untuk Admin.
      */
-    public function index()
+    public function index(): Response
     {
         // Mengambil semua order dengan relasi user (pembeli)
         $orders = Order::with('user')
@@ -25,21 +27,12 @@ class AdminOrderController extends Controller
         ]);
     }
 
-    public function userIndex() {
-        $orders = Order::where('user_id', Auth::id())->get(); // User hanya lihat miliknya
-        return Inertia::render('User/Orders/Index', [ // Arahkan ke file file JSX khusus user
-            'orders' => $orders
-        ]);
-    }
-
-    public function userOrders()
+    public function userIndex(): Response
     {
-        // Ambil data pesanan HANYA milik user yang login
         $orders = Order::where('user_id', Auth::id())
                     ->latest()
                     ->get();
-
-        return Inertia::render('User/Orders', [
+        return Inertia::render('User/Orders/Index', [
             'orders' => $orders
         ]);
     }
@@ -47,7 +40,7 @@ class AdminOrderController extends Controller
     /**
      * Menampilkan detail pesanan spesifik.
      */
-    public function show($id)
+    public function show(int $id): Response
     {
         // Kita gunakan findOrFail agar jika ID tidak ada langsung muncul 404
         // Load relasi user, items, dan produk di dalamnya
@@ -61,7 +54,7 @@ class AdminOrderController extends Controller
     /**
      * Update status pesanan (Pending, Processing, Completed, Cancelled).
      */
-    public function update(Request $request, Order $order)
+    public function update(Request $request, Order $order): RedirectResponse
     {
         $request->validate([
             'status' => 'required|string|in:Pending,Processing,Completed,Cancelled',
@@ -75,9 +68,33 @@ class AdminOrderController extends Controller
     }
 
     /**
+     * Approve/Setujui pesanan (ubah status menjadi Processing).
+     */
+    public function approve(Order $order): RedirectResponse
+    {
+        $order->update([
+            'status' => 'Processing'
+        ]);
+
+        return redirect()->back()->with('success', 'Pesanan berhasil disetujui dan sedang diproses.');
+    }
+
+    /**
+     * Reject/Tolak pesanan (ubah status menjadi Cancelled).
+     */
+    public function reject(Order $order): RedirectResponse
+    {
+        $order->update([
+            'status' => 'Cancelled'
+        ]);
+
+        return redirect()->back()->with('success', 'Pesanan berhasil ditolak.');
+    }
+
+    /**
      * Opsional: Jika ingin admin bisa menghapus data pesanan
      */
-    public function destroy(Order $order)
+    public function destroy(Order $order): RedirectResponse
     {
         $order->delete();
         return redirect()->route('admin.orders.index')->with('success', 'Pesanan berhasil dihapus.');

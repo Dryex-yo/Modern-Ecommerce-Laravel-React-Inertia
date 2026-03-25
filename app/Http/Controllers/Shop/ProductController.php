@@ -2,17 +2,17 @@
 
 namespace App\Http\Controllers\Shop;
 use App\Http\Controllers\Controller;
-
 use App\Models\Product;
 use App\Models\Category;
 use Inertia\Inertia;
+use Inertia\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 
 class ProductController extends Controller
 {
 
-    public function index()
+    public function index(): Response
     {
         $products = Product::with('category')->get()->map(function ($product) {
             $isWishlisted = false;
@@ -42,7 +42,7 @@ class ProductController extends Controller
         ]);
     }
 
-    public function show($id)
+    public function show(int $id): Response
     {
         $product = Product::with('category')->findOrFail($id);
 

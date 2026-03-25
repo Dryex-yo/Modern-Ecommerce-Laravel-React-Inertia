@@ -2,70 +2,89 @@
 
 namespace App\Http\Controllers;
 
+use App\Http\Requests\StoreAddressRequest;
+use App\Http\Requests\UpdateAddressRequest;
+use App\Services\AddressService;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
+use Inertia\Response;
 use App\Models\Address;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Http\RedirectResponse;
 
 class AddressController extends Controller
 {
-    public function create()
+    public function __construct(private AddressService $addressService)
+    {}
+
+    /**
+     * Show the form for creating a new address.
+     */
+    public function create(): Response
     {
         return Inertia::render('Profile/Partials/AddressCreate'); 
     }
 
-    public function store(Request $request)
+    /**
+     * Store a newly created address in storage.
+     */
+    public function store(StoreAddressRequest $request): RedirectResponse
     {
-        $validated = $request->validate([
-            'label' => 'required|string|max:255',
-            'full_address' => 'required|string',
-            'city' => 'required|string',
-            'postal_code' => 'required|string',
-        ]);
-
-        $request->user()->addresses()->create($validated);
+        $this->addressService->createAddress(
+            Auth::user(),
+            $request->validated()
+        );
 
         return redirect()->route('profile.edit')->with('message', 'Alamat berhasil ditambah!');
     }
 
-    public function update(Request $request, Address $address)
+    /**
+     * Show the form for editing the specified address.
+     */
+    public function edit(Address $address): Response
     {
-        $validated = $request->validate([
-            'label' => 'required|string|max:50',
-            'full_address' => 'required|string',
-            'city' => 'required|string|max:100',
-            'postal_code' => 'required|string|max:10',
-            'is_default' => 'boolean',
+        // Authorize: pastikan user hanya bisa edit alamat miliknya sendiri
+        $this->authorizeAddress($address);
+
+        return Inertia::render('Profile/Partials/AddressEdit', [
+            'address' => $address,
         ]);
-
-        if ($request->is_default) {
-            $request->user()->addresses()->update(['is_default' => false]);
-        }
-
-        $address->update($validated);
-
-        return back()->with('success', 'Address updated successfully.');
     }
 
-    public function destroy(Address $address)
+    /**
+     * Update the specified address in storage.
+     */
+    public function update(UpdateAddressRequest $request, Address $address): RedirectResponse
     {
-        // Pastikan user hanya bisa menghapus alamat miliknya sendiri
+        // Authorization check
+        $this->authorizeAddress($address);
+
+        $this->addressService->updateAddress($address, $request->validated());
+
+        return redirect()->route('profile.edit')->with('message', 'Alamat berhasil diperbarui!');
+    }
+
+    /**
+     * Remove the specified address from storage.
+     */
+    public function destroy(Address $address): RedirectResponse
+    {
+        // Authorize: pastikan user hanya bisa menghapus alamat miliknya sendiri
+        $this->authorizeAddress($address);
+
+        $this->addressService->deleteAddress($address);
+
+        return redirect()->route('profile.edit')->with('message', 'Alamat berhasil dihapus!');
+    }
+
+    /**
+     * Helper method to check if user owns the address
+     */
+    private function authorizeAddress(Address $address): void
+    {
         if (Auth::id() !== $address->user_id) {
-            abort(403);
+            abort(403, 'Anda tidak berhak mengakses alamat ini.');
         }
-
-        // Hapus alamat
-        $address->delete();
-
-        // Jika yang dihapus adalah alamat default, 
-        // opsional: setel alamat lain yang tersisa menjadi default
-        if ($address->is_default) {
-            $nextAddress = Auth::user()->addresses()->first();
-            if ($nextAddress) {
-                $nextAddress->update(['is_default' => true]);
-            }
-        }
-
-        return back()->with('success', 'Address deleted successfully.');
     }
 }
+

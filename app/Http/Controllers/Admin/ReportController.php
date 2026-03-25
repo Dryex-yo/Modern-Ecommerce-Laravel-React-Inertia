@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Order;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
 use Carbon\Carbon;
 use App\Exports\OrdersExport;
@@ -34,17 +35,28 @@ class ReportController extends Controller
         ]);
     }
 
-    public function exportExcel(Request $request) 
+    public function exportExcel(Request $request)
     {
-        $start = $request->start_date ?? now()->startOfMonth();
-        $end = $request->end_date ?? now()->endOfMonth();
+        // Validasi dan parse tanggal dengan aman
+        try {
+            $start = $request->start_date ? Carbon::parse($request->start_date) : now()->startOfMonth();
+            $end = $request->end_date ? Carbon::parse($request->end_date) : now()->endOfMonth();
+        } catch (\Exception $e) {
+            return back()->with('error', 'Format tanggal tidak valid');
+        }
+        
         return Excel::download(new OrdersExport($start, $end), 'laporan-penjualan.xlsx');
     }
 
-    public function exportPdf(Request $request) 
+    public function exportPdf(Request $request)
     {
-        $start = $request->start_date ? Carbon::parse($request->start_date) : now()->startOfMonth();
-        $end = $request->end_date ? Carbon::parse($request->end_date) : now()->endOfMonth();
+        // Validasi dan parse tanggal dengan aman
+        try {
+            $start = $request->start_date ? Carbon::parse($request->start_date) : now()->startOfMonth();
+            $end = $request->end_date ? Carbon::parse($request->end_date) : now()->endOfMonth();
+        } catch (\Exception $e) {
+            return back()->with('error', 'Format tanggal tidak valid');
+        }
         
         // Ambil data dengan relasi user agar tidak error
         $reports = Order::with('user')

@@ -4,12 +4,14 @@ namespace App\Http\Controllers;
 
 use App\Models\Wishlist;
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
+use Inertia\Response;
 use Illuminate\Support\Facades\Auth;
 
 class WishlistController extends Controller
 {
-    public function index()
+    public function index(): Response
     {
         $wishlistItems = Wishlist::where('user_id', Auth::id())
             ->with('product.category') 
@@ -32,7 +34,7 @@ class WishlistController extends Controller
 
     // app/Http/Controllers/WishlistController.php
 
-    public function toggle(Request $request, $productId)
+    public function toggle(Request $request, int $productId): RedirectResponse
     {
         // Gunakan Auth::id() bukan auth()->id jika intelephense error
         $userId = \Illuminate\Support\Facades\Auth::id(); 

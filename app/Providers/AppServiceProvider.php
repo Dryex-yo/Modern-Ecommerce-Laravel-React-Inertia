@@ -23,10 +23,10 @@ class AppServiceProvider extends ServiceProvider
     public function boot(): void
     {
         Vite::prefetch(concurrency: 3);
-        Gate::define('admin-access', function (User $user) {
-        // Sesuaikan dengan nama kolom role di database kamu
-        return $user->role === 'admin'; 
-    });
+        Gate::define('access-admin-panel', function (User $user) {
+            // Sesuaikan dengan nama kolom role di database kamu
+            return $user->role === 'admin'; 
+        });
     }
     
 }

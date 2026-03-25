@@ -32,7 +32,7 @@ export default function Index({ auth, reports, summary, filters }) {
                 <div className="flex flex-wrap gap-3">
                     {/* Tombol Excel */}
                     <a 
-                        href={route('admin.reports.excel', { start_date: data.start_date, end_date: data.end_date })} 
+                        href={route('admin.reports.export.excel', { start_date: data.start_date, end_date: data.end_date })} 
                         className="flex items-center gap-2 px-6 py-3 bg-emerald-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-emerald-100 hover:bg-emerald-700 hover:scale-[1.02] transition-all"
                     >
                         <Download size={18} />
@@ -41,7 +41,7 @@ export default function Index({ auth, reports, summary, filters }) {
 
                     {/* Tombol PDF */}
                     <a 
-                        href={route('admin.reports.pdf', { start_date: data.start_date, end_date: data.end_date })} 
+                        href={route('admin.reports.export.pdf', { start_date: data.start_date, end_date: data.end_date })} 
                         className="flex items-center gap-2 px-6 py-3 bg-rose-600 text-white rounded-2xl font-bold text-sm shadow-lg shadow-rose-100 hover:bg-rose-700 hover:scale-[1.02] transition-all"
                     >
                         <FileText size={18} />

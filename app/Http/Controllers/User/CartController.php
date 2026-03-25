@@ -9,14 +9,16 @@ use App\Models\Product;
 use App\Models\Order;      
 use App\Models\OrderItem;  
 use Illuminate\Http\Request;
+use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Str;
 use Inertia\Inertia;
+use Inertia\Response;
 
 class CartController extends Controller
 {
-    public function index(Request $request)
+    public function index(Request $request): Response
     {
         $cartItems = \App\Models\Cart::where('user_id', Auth::id())
             ->with(['product.category']) // TARIK RELASI CATEGORY JUGA
@@ -44,7 +46,7 @@ class CartController extends Controller
         ]);
     }
 
-    public function store(Request $request)
+    public function store(Request $request): RedirectResponse
     {
         if (!Auth::check()) {
             return redirect()->route('login');
@@ -83,8 +85,17 @@ class CartController extends Controller
         return redirect()->back()->with('message', 'Berhasil ditambahkan ke keranjang!');
     }
 
-    public function checkout(Request $request)
+    public function checkout(Request $request): RedirectResponse
     {
+        // Validasi shipping address
+        $request->validate([
+            'shipping_address' => 'required|string|min:10|max:500',
+        ], [
+            'shipping_address.required' => 'Alamat pengiriman harus diisi',
+            'shipping_address.min' => 'Alamat pengiriman minimal 10 karakter',
+            'shipping_address.max' => 'Alamat pengiriman maksimal 500 karakter',
+        ]);
+
         // 1. Ambil data keranjang dengan relasi produk
         $cartItems = Cart::where('user_id', Auth::id())->with('product')->get();
         
@@ -98,14 +109,14 @@ class CartController extends Controller
         }, 0);
 
         try {
-            DB::transaction(function () use ($cartItems, $totalPrice) {
-                // 3. Buat Header Order
+            DB::transaction(function () use ($cartItems, $totalPrice, $request) {
+                // 3. Buat Header Order dengan shipping address dari user
                 $order = Order::create([
                     'user_id' => Auth::id(),
                     'order_number' => 'INV-' . strtoupper(Str::random(10)),
                     'total_price' => $totalPrice,
                     'status' => 'pending',
-                    'shipping_address' => 'Alamat Pengiriman Belum Diisi',
+                    'shipping_address' => $request->shipping_address,
                 ]);
 
                 // 4. Masukkan ke Detail Order (OrderItem)
@@ -133,7 +144,7 @@ class CartController extends Controller
     }
 
     // Fungsi untuk Update Jumlah (Plus/Minus)
-    public function update(Request $request, $id)
+    public function update(Request $request, int $id): RedirectResponse
     {
         $cart = Cart::where('user_id', Auth::id())->findOrFail($id);
         $product = Product::findOrFail($cart->product_id);
@@ -160,7 +171,7 @@ class CartController extends Controller
     }
 
     // Fungsi untuk Hapus Item (Trash)
-    public function destroy($id)
+    public function destroy(int $id): RedirectResponse
     {
         $cart = Cart::where('user_id', Auth::id())->findOrFail($id);
         $cart->delete();

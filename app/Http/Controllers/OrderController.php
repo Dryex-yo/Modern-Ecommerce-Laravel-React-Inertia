@@ -4,12 +4,13 @@ namespace App\Http\Controllers;
 
 use App\Models\Order;
 use Inertia\Inertia;
+use Inertia\Response;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Log;
 
 class OrderController extends Controller
 {
-    public function index()
+    public function index(): Response
     {
         $orders = Order::where('user_id', Auth::id())
             ->with('items.product')
@@ -23,7 +24,7 @@ class OrderController extends Controller
         ]);
     }
 
-    public function show($id)
+    public function show(int $id): Response
     {
         $order = Order::with('items.product')
             ->where('user_id', Auth::id())

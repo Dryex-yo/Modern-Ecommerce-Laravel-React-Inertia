@@ -113,7 +113,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
 // --------------------------------------------------------------------------
 // ADMIN ONLY ROUTES
 // --------------------------------------------------------------------------
-Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(function () {
+Route::middleware(['auth', 'can:access-admin-panel'])->prefix('admin')->name('admin.')->group(function () {
     
     // Check if user is admin
     Route::middleware('is.admin')->group(function () {
@@ -136,6 +136,8 @@ Route::middleware(['auth', 'verified'])->prefix('admin')->name('admin.')->group(
             Route::get('/', 'index')->name('index');
             Route::get('/{id}', 'show')->name('show');
             Route::patch('/{order}', 'update')->name('update');
+            Route::post('/{order}/approve', 'approve')->name('approve');
+            Route::post('/{order}/reject', 'reject')->name('reject');
             Route::delete('/{order}', 'destroy')->name('destroy');
         });
 

@@ -19,6 +19,7 @@ export default {
             animation: {
                 'infinite-scroll-reverse': 'infinite-scroll-reverse 5s linear infinite',
                 'infinite-scroll': 'infinite-scroll 5s linear infinite',
+                'blob': 'blob 7s infinite',
             },
             keyframes: {
                 'infinite-scroll-reverse': {
@@ -28,6 +29,20 @@ export default {
                 'infinite-scroll': { 
                     from: { transform: 'translateX(0)' },
                     to: { transform: 'translateX(-50%)' },
+                },
+                'blob': {
+                    '0%': {
+                        transform: 'translate(0px, 0px) scale(1)',
+                    },
+                    '33%': {
+                        transform: 'translate(30px, -50px) scale(1.1)',
+                    },
+                    '66%': {
+                        transform: 'translate(-20px, 20px) scale(0.9)',
+                    },
+                    '100%': {
+                        transform: 'translate(0px, 0px) scale(1)',
+                    },
                 }
             }
         },
@@ -35,5 +50,6 @@ export default {
 
     plugins: [forms],
 };
+
 
 
