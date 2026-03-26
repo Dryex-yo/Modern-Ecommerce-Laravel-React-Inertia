@@ -1,13 +1,44 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Link, router, usePage } from '@inertiajs/react';
-import { ShoppingBag, LogOut, Home, User, ShoppingCart, ChevronDown, Settings, Shield, Sparkles } from 'lucide-react';
+import { ShoppingBag, LogOut, Home, User, ShoppingCart, ChevronDown, Settings, Shield, Sparkles, MessageCircle } from 'lucide-react';
 import ThemeToggle from '@/Components/ThemeToggle';
+import ChatWidget from '@/Components/ChatWidget';
 
 export default function UserLayout({ children }) {
     // Ambil user langsung dari usePage().props.auth agar selalu sinkron dengan state global
     const { auth, settings, cart_count } = usePage().props;
     const user = auth.user;
     const [isMenuOpen, setIsMenuOpen] = useState(false);
+    const [unreadMessages, setUnreadMessages] = useState(0);
+
+    // Polling untuk unread message count
+    useEffect(() => {
+        if (!user?.id) return;
+
+        const checkUnreadMessages = async () => {
+            try {
+                const response = await fetch(route('user.messages.unread-count'), {
+                    method: 'GET',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+
+                if (response.ok) {
+                    const result = await response.json();
+                    if (result.success) {
+                        setUnreadMessages(result.unread_count);
+                    }
+                }
+            } catch (error) {
+                console.error('Error checking unread messages:', error);
+            }
+        };
+
+        checkUnreadMessages();
+        const interval = setInterval(checkUnreadMessages, 3000); // Check setiap 3 detik
+        return () => clearInterval(interval);
+    }, [user?.id]);
 
     const handleLogout = (e) => {
         e.preventDefault();
@@ -48,6 +79,17 @@ export default function UserLayout({ children }) {
                             )}
                         </div>
                         Cart
+                    </Link>
+                    <Link href={route('user.messages.index')} className="relative group text-[11px] font-black uppercase tracking-[0.2em] text-slate-400 hover:text-blue-600 transition-colors flex items-center gap-2">
+                        <div className="relative">
+                            <MessageCircle size={18} />
+                            {unreadMessages > 0 && (
+                                <span className="absolute -top-2 -right-2 bg-red-600 text-white text-[9px] font-black w-4 h-4 flex items-center justify-center rounded-full border-2 border-white animate-pulse shadow-sm">
+                                    {unreadMessages}
+                                </span>
+                            )}
+                        </div>
+                        Messages
                     </Link>
                     <NavLink href={route('dashboard')} icon={<User size={16} />} label="My Dashboard" />
                 </div>
@@ -107,6 +149,7 @@ export default function UserLayout({ children }) {
 
                                 <div className="space-y-1">
                                     <DropdownLink href={route('profile.edit')} icon={<Settings size={16} />} label="Account Settings" />
+                                    <DropdownLink href={route('user.messages.index')} icon={<MessageCircle size={16} />} label="My Messages" badge={unreadMessages} color="text-blue-500" />
                                     
                                     {user?.role === 'admin' && (
                                         <DropdownLink href="/admin/dashboard" icon={<Shield size={16} />} label="Admin Panel" color="text-emerald-500" />
@@ -135,6 +178,9 @@ export default function UserLayout({ children }) {
             <main className="animate-in fade-in slide-in-from-bottom-2 duration-700">
                 {children}
             </main>
+
+            {/* Chat Widget */}
+            <ChatWidget />
 
             {/* --- FOOTER --- */}
             <footer className="mt-24 border-t border-slate-100 bg-white py-16">
@@ -168,16 +214,21 @@ function NavLink({ href, icon, label }) {
     );
 }
 
-function DropdownLink({ href, icon, label, color = "text-blue-500" }) {
+function DropdownLink({ href, icon, label, color = "text-blue-500", badge = 0 }) {
     return (
         <Link 
             href={href}
-            className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 rounded-[1.2rem] text-slate-600 hover:text-slate-900 transition-all group"
+            className="flex items-center gap-3 px-4 py-3 hover:bg-slate-50 rounded-[1.2rem] text-slate-600 hover:text-slate-900 transition-all group relative"
         >
             <div className={`w-8 h-8 rounded-lg bg-slate-50 flex items-center justify-center text-slate-400 group-hover:bg-white group-hover:${color} transition-all shadow-sm`}>
                 {icon}
             </div>
-            <span className="text-[10px] font-black uppercase tracking-widest">{label}</span>
+            <span className="text-[10px] font-black uppercase tracking-widest flex-1">{label}</span>
+            {badge > 0 && (
+                <span className="ml-2 flex-shrink-0 w-5 h-5 bg-red-600 text-white rounded-full text-[8px] font-black flex items-center justify-center animate-pulse">
+                    {badge}
+                </span>
+            )}
         </Link>
     );
 }

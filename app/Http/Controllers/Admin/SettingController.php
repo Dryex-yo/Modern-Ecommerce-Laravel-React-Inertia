@@ -19,6 +19,7 @@ class SettingController extends Controller
         $settings = array_merge([
             'shop_name'       => 'DRYEX SHOP',
             'shop_email'      => 'admin@dryex.com',
+            'shop_phone'      => '',
             'shop_logo'       => null,
             'notif_orders'    => '1',
             'notif_stock'     => '1',
@@ -44,6 +45,7 @@ class SettingController extends Controller
         $data = $request->validate([
             'shop_name'    => 'nullable|string|max:255',
             'shop_email'   => 'nullable|email',
+            'shop_phone'   => 'nullable|string|max:20',
             'shop_logo'    => 'nullable|image|mimes:jpg,jpeg,png,svg|max:2048',
             'notif_orders' => 'nullable',
             'notif_stock'  => 'nullable',

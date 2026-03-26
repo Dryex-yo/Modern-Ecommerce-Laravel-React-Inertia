@@ -3,7 +3,7 @@ import SidebarItem from '@/Components/SidebarItem';
 import { 
     LayoutGrid, Package, ShoppingCart, LogOut, BarChart3,
     Receipt, FileText, Settings, Search, AlertTriangle,
-    Bell, ChevronRight, Loader2, Menu, Users, Layers, Home
+    Bell, ChevronRight, Loader2, Menu, Users, Layers, Home, MessageSquare
 } from 'lucide-react';
 import { Link, router, usePage } from '@inertiajs/react';
 import axios from 'axios';
@@ -18,7 +18,8 @@ export default function AdminLayout({ children, user }) {
 
     const pendingOrders = notifications?.pending_orders_count || 0;
     const lowStock = notifications?.low_stock_count || 0;
-    const totalNotif = pendingOrders + lowStock;
+    const unreadMessages = notifications?.unread_messages_count || 0;
+    const totalNotif = pendingOrders + lowStock + unreadMessages;
 
     // State untuk mendeteksi notifikasi baru (menyimpan nilai notif sebelumnya)
     const [prevPendingOrders, setPrevPendingOrders] = useState(pendingOrders);
@@ -140,6 +141,12 @@ export default function AdminLayout({ children, user }) {
                         <SidebarItem icon={<Users size={20}/>} label="Users" href={route('admin.users.index')} active={route().current('admin.users.*')} />
                     </div>
 
+                    {/* Support & Communication */}
+                    <div className="pt-6 pb-3">
+                        <p className="px-5 text-[10px] font-black text-slate-300 uppercase tracking-[0.25em] mb-4">Support</p>
+                        <SidebarItem icon={<MessageSquare size={20}/>} label="Messages" href={route('admin.messages.index')} active={route().current('admin.messages.*')} />
+                    </div>
+
                     {/* Finance */}
                     <div className="pt-6 pb-3">
                         <p className="px-5 text-[10px] font-black text-slate-300 uppercase tracking-[0.25em] mb-4">Accounting</p>
@@ -215,13 +222,21 @@ export default function AdminLayout({ children, user }) {
                             )}
                         </div>
 
-                        {/* Home + Theme Toggle */}
+                        {/* Home + Messages + Theme Toggle */}
                         <Link 
                             href="/" 
                             title="Go to Store" 
                             className="p-3.5 bg-white rounded-2xl shadow-sm border border-slate-50 text-slate-500 hover:text-blue-600 hover:shadow-md transition-all hover:scale-110 active:scale-95"
                         >
                             <Home size={20} />
+                        </Link>
+                        <Link 
+                            href={route('admin.messages.index')} 
+                            title="Go to Messages" 
+                            className="p-3.5 bg-white rounded-2xl shadow-sm border border-slate-50 text-slate-500 hover:text-blue-600 hover:shadow-md transition-all hover:scale-110 active:scale-95 relative"
+                        >
+                            <MessageSquare size={20} />
+                            {notifications?.unread_messages_count > 0 && <span className="absolute top-2 right-2 w-5 h-5 bg-red-600 text-white text-[9px] font-black rounded-full flex items-center justify-center animate-pulse">{notifications.unread_messages_count}</span>}
                         </Link>
                         <ThemeToggle minimal />
                         <div className="relative group">
@@ -244,6 +259,12 @@ export default function AdminLayout({ children, user }) {
                                         <Link href={route('admin.products.index')} className="flex items-center gap-3 p-3 hover:bg-rose-50 rounded-2xl transition-all">
                                             <div className="w-9 h-9 bg-rose-100 text-rose-600 rounded-xl flex items-center justify-center"><AlertTriangle size={16} /></div>
                                             <span className="text-xs font-bold text-slate-700">{lowStock} Low Stock Items</span>
+                                        </Link>
+                                    )}
+                                    {unreadMessages > 0 && (
+                                        <Link href={route('admin.messages.index')} className="flex items-center gap-3 p-3 hover:bg-blue-50 rounded-2xl transition-all">
+                                            <div className="w-9 h-9 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center"><MessageSquare size={16} /></div>
+                                            <span className="text-xs font-bold text-slate-700">{unreadMessages} New Messages</span>
                                         </Link>
                                     )}
                                 </div>

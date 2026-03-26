@@ -14,8 +14,12 @@ use App\Http\Controllers\AddressController;
 use App\Http\Controllers\PaymentMethodController;
 use App\Http\Controllers\OrderController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\FaqController;
+use App\Http\Controllers\ContactController;
+use App\Http\Controllers\AboutController;
 use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\User\CartController;
+use App\Http\Controllers\User\MessageController as UserMessageController;
 use App\Http\Controllers\Shop\ProductController as ShopProductController;
 use App\Http\Controllers\Admin\{
     DashboardController as AdminDashboardController,
@@ -27,7 +31,8 @@ use App\Http\Controllers\Admin\{
     SettingController,
     TransactionController,
     ReportController,
-    GlobalSearchController
+    GlobalSearchController,
+    MessageController as AdminMessageController
 };
 
 // --------------------------------------------------------------------------
@@ -55,6 +60,18 @@ Route::get('/', function (Request $request) {
 
 Route::get('/shop', [ShopProductController::class, 'index'])->name('shop.index');
 Route::get('/shop/product/{id}', [ShopProductController::class, 'show'])->name('shop.product.show');
+
+// FAQ, About, and Contact
+Route::get('/faq', [FaqController::class, 'index'])->name('faq.index');
+Route::get('/about', [AboutController::class, 'index'])->name('about.index');
+Route::get('/contact', [ContactController::class, 'create'])->name('contact.create');
+Route::post('/contact', [ContactController::class, 'store'])->name('contact.store');
+
+// Messages Widget (Public)
+Route::post('/api/messages/create-from-widget', [AdminMessageController::class, 'createFromWidget'])->name('messages.create-from-widget');
+Route::get('/api/messages/latest', [AdminMessageController::class, 'getLatest'])->name('messages.get-latest');
+Route::get('/api/messages/history', [AdminMessageController::class, 'getHistory'])->name('messages.history');
+Route::get('/api/messages/check-replies', [AdminMessageController::class, 'checkReplies'])->name('messages.check-replies');
 
 // Email Verification
 Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
@@ -108,6 +125,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/{id}', 'show')->name('show');
     });
+
+    // ===== MESSAGES =====
+    Route::controller(UserMessageController::class)->prefix('messages')->name('user.messages.')->group(function () {
+        Route::get('/', 'index')->name('index');
+        Route::post('/{id}', 'store')->name('store');
+        Route::post('/{id}/mark-as-read', 'markAsRead')->name('mark-as-read');
+        Route::get('/get-latest', 'getLatest')->name('get-latest');
+        Route::get('/unread-count', 'getUnreadCount')->name('unread-count');
+    });
 });
 
 // --------------------------------------------------------------------------
@@ -144,6 +170,14 @@ Route::middleware(['auth', 'can:access-admin-panel'])->prefix('admin')->name('ad
         // ===== ANALYTICS & REPORTS =====
         Route::get('/analytics', [AnalyticsController::class, 'index'])->name('analytics.index');
         Route::get('/transactions', [TransactionController::class, 'index'])->name('transactions.index');
+
+        // ===== MESSAGES & SUPPORT =====
+        Route::controller(AdminMessageController::class)->prefix('messages')->name('messages.')->group(function () {
+            Route::get('/', 'index')->name('index');
+            Route::post('/{id}', 'store')->name('store');
+            Route::patch('/{id}/close', 'close')->name('close');
+            Route::post('/{id}/mark-as-read', 'markAsRead')->name('mark-as-read');
+        });
 
         // ===== SETTINGS =====
         Route::controller(SettingController::class)->prefix('settings')->name('settings.')->group(function () {

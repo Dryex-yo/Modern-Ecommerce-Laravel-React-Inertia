@@ -1,5 +1,6 @@
 import ApplicationLogo from '@/Components/ApplicationLogo';
 import ThemeToggle from '@/Components/ThemeToggle';
+import ChatWidget from '@/Components/ChatWidget';
 import { Link } from '@inertiajs/react';
 import { Home } from 'lucide-react';
 
@@ -25,6 +26,9 @@ export default function GuestLayout({ children }) {
             <div className="mt-6 w-full overflow-hidden bg-white dark:bg-slate-800 px-6 py-4 shadow-md sm:max-w-md sm:rounded-lg transition-colors duration-300">
                 {children}
             </div>
+
+            {/* Chat Widget */}
+            <ChatWidget />
         </div>
     );
 }

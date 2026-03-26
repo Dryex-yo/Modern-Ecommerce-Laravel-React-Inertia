@@ -5,6 +5,7 @@ namespace App\Http\Middleware;
 use App\Models\Setting;
 use App\Models\Order;
 use App\Models\Product;
+use App\Models\MessageReply;
 use Illuminate\Http\Request;
 use Inertia\Middleware;
 
@@ -73,6 +74,9 @@ class HandleInertiaRequests extends Middleware
                 'notifications' => [
                     'pending_orders_count' => Order::where('status', 'pending')->count(),
                     'low_stock_count' => Product::where('stock', '<=', 5)->count(),
+                    'unread_messages_count' => $request->user() && $request->user()->role === 'admin' 
+                        ? MessageReply::where('sender', 'customer')->where('is_read', false)->count()
+                        : 0,
                 ],
 
                 'flash' => [

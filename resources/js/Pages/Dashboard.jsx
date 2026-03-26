@@ -177,11 +177,6 @@ export default function UserDashboard() {
                                 <span className="text-[9px] font-bold uppercase tracking-widest mt-2 text-slate-400">Wishlist</span>
                             </div>
                         </Link>
-
-                        <div className="group bg-gradient-to-br from-purple-600 to-purple-700 text-white p-6 rounded-[2.5rem] flex flex-col items-center justify-center min-w-[120px] shadow-xl hover:scale-105 transition-all duration-300">
-                            <span className="text-3xl font-black italic leading-none">{loyaltyPoints}</span>
-                            <span className="text-[9px] font-bold uppercase tracking-widest mt-2 text-purple-200">Points</span>
-                        </div>
                     </div>
                 </div>
 
@@ -290,29 +285,29 @@ export default function UserDashboard() {
                         <div className="bg-slate-900 text-white p-8 rounded-[3rem] space-y-3">
                             <h4 className="font-black uppercase italic text-[12px] mb-6 tracking-tight">Quick Support</h4>
                             
-                            <a href="#" className="flex items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all group">
+                            <Link href={route('faq.index')} className="flex items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all group">
                                 <div className="flex items-center gap-3">
                                     <HelpCircle size={18} />
                                     <span className="font-bold text-[10px] uppercase">FAQ</span>
                                 </div>
                                 <ChevronRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </a>
+                            </Link>
 
-                            <a href="#" className="flex items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all group">
+                            <Link href={route('contact.create')} className="flex items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all group">
                                 <div className="flex items-center gap-3">
                                     <MessageCircle size={18} />
                                     <span className="font-bold text-[10px] uppercase">Contact CS</span>
                                 </div>
                                 <ChevronRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </a>
+                            </Link>
 
-                            <a href="#" className="flex items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all group">
+                            <Link href={route('about.index')} className="flex items-center justify-between p-4 rounded-xl bg-white/5 hover:bg-white/10 transition-all group">
                                 <div className="flex items-center gap-3">
                                     <BookOpen size={18} />
                                     <span className="font-bold text-[10px] uppercase">About Us</span>
                                 </div>
                                 <ChevronRight size={16} className="opacity-0 group-hover:opacity-100 transition-opacity" />
-                            </a>
+                            </Link>
                         </div>
                     </div>
 
@@ -366,29 +361,8 @@ export default function UserDashboard() {
                                 </div>
                             </div>
 
-                            {/* User Tier Card */}
-                            <div className={`group ${containerVariants}`} style={{ animationDelay: '300ms' }}>
-                                <div className={`bg-gradient-to-br ${tier.color} p-10 rounded-[3.5rem] text-white shadow-xl relative overflow-hidden h-full flex flex-col justify-between`}>
-                                    <ZapIcon size={100} className="absolute -bottom-5 -right-5 opacity-10 rotate-12" />
-                                    
-                                    <div className="relative z-10">
-                                        <div className="w-14 h-14 bg-white/20 backdrop-blur-md text-white rounded-2xl flex items-center justify-center mb-6">
-                                            <TierIcon size={28} />
-                                        </div>
-                                        <h3 className="text-2xl font-black italic uppercase">{tier.name} Member</h3>
-                                        <p className="text-white/80 mt-2 mb-8 text-[11px] font-bold uppercase tracking-wider leading-relaxed">
-                                            Total spent: {formatCurrency(totalSpent)}
-                                        </p>
-                                    </div>
-                                    
-                                    <Link href={route('profile.edit')} className="bg-white text-slate-900 w-full py-4 rounded-2xl text-[10px] font-black inline-flex items-center justify-center gap-3 uppercase tracking-[0.2em] hover:bg-slate-900 hover:text-white transition-all shadow-lg group relative z-10">
-                                        Level Up <TrendingUp size={16} className="group-hover:translate-y-0.5 transition-transform" />
-                                    </Link>
-                                </div>
-                            </div>
-
                             {/* Stats Card */}
-                            <div className={`group ${containerVariants}`} style={{ animationDelay: '400ms' }}>
+                            <div className={`group ${containerVariants}`} style={{ animationDelay: '300ms' }}>
                                 <div className="bg-white p-10 rounded-[3.5rem] border border-slate-50 shadow-sm hover:shadow-2xl transition-all duration-500 h-full flex flex-col justify-between">
                                     <div>
                                         <div className="w-14 h-14 bg-slate-100 text-slate-600 rounded-2xl flex items-center justify-center mb-6 group-hover:scale-110 transition-transform">
@@ -416,7 +390,7 @@ export default function UserDashboard() {
 
                         {/* RECENT ORDERS PREVIEW */}
                         {recentOrders && recentOrders.length > 0 && (
-                            <div className={`bg-white p-10 rounded-[3.5rem] border border-slate-50 shadow-sm ${containerVariants}`} style={{ animationDelay: '500ms' }}>
+                            <div className={`bg-white p-10 rounded-[3.5rem] border border-slate-50 shadow-sm ${containerVariants}`} style={{ animationDelay: '400ms' }}>
                                 <div className="flex items-center justify-between mb-8">
                                     <h4 className="font-black text-slate-800 uppercase italic text-lg">Pesanan Terbaru</h4>
                                     <Link href={route('orders.index')} className="text-[9px] font-black text-blue-600 uppercase tracking-wider hover:text-slate-900 transition-colors">
@@ -447,7 +421,7 @@ export default function UserDashboard() {
 
                         {/* PRODUCT RECOMMENDATIONS */}
                         {recommendations && recommendations.length > 0 && (
-                            <div className={`bg-white p-10 rounded-[3.5rem] border border-slate-50 shadow-sm ${containerVariants}`} style={{ animationDelay: '600ms' }}>
+                            <div className={`bg-white p-10 rounded-[3.5rem] border border-slate-50 shadow-sm ${containerVariants}`} style={{ animationDelay: '500ms' }}>
                                 <div className="flex items-center gap-3 mb-8">
                                     <div className="p-2 bg-blue-50 rounded-lg text-blue-600">
                                         <Lightbulb size={20} />
@@ -484,7 +458,7 @@ export default function UserDashboard() {
                         )}
 
                         {/* WISHLIST SECTION */}
-                        <div className={`group ${containerVariants}`} style={{ animationDelay: '700ms' }}>
+                        <div className={`group ${containerVariants}`} style={{ animationDelay: '600ms' }}>
                             <div className="bg-slate-50 p-10 rounded-[3rem] border border-slate-100 flex flex-col md:flex-row items-center justify-between group-hover:bg-white group-hover:shadow-xl transition-all duration-500 overflow-hidden relative">
                                 <div className="flex items-center gap-6 relative z-10">
                                     <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-slate-300 group-hover:text-pink-500 transition-colors shadow-sm">
