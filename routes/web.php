@@ -19,6 +19,7 @@ use App\Http\Controllers\ContactController;
 use App\Http\Controllers\AboutController;
 use App\Http\Controllers\User\ProfileController;
 use App\Http\Controllers\User\CartController;
+use App\Http\Controllers\User\PaymentController;
 use App\Http\Controllers\User\MessageController as UserMessageController;
 use App\Http\Controllers\Shop\ProductController as ShopProductController;
 use App\Http\Controllers\Admin\{
@@ -73,6 +74,9 @@ Route::get('/api/messages/latest', [AdminMessageController::class, 'getLatest'])
 Route::get('/api/messages/history', [AdminMessageController::class, 'getHistory'])->name('messages.history');
 Route::get('/api/messages/check-replies', [AdminMessageController::class, 'checkReplies'])->name('messages.check-replies');
 
+// ===== PAYMENT WEBHOOK =====
+Route::post('/api/payment/midtrans-callback', [\App\Http\Controllers\Api\PaymentWebhookController::class, 'midtransCallback'])->name('payment.webhook.midtrans');
+
 // Email Verification
 Route::get('/email/verify/{id}/{hash}', function (EmailVerificationRequest $request) {
     $request->fulfill();
@@ -124,6 +128,16 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::controller(OrderController::class)->prefix('my-orders')->name('orders.')->group(function () {
         Route::get('/', 'index')->name('index');
         Route::get('/{id}', 'show')->name('show');
+    });
+
+    // ===== PAYMENT =====
+    Route::controller(PaymentController::class)->prefix('payment')->name('payment.')->group(function () {
+        Route::get('/order/{order}', 'show')->name('show');
+        Route::post('/order/{order}/initiate', 'initiate')->name('initiate');
+        Route::get('/order/{order}/status', 'checkStatus')->name('check-status');
+        Route::get('/order/{order}/success', 'success')->name('success');
+        Route::get('/order/{order}/failed', 'failed')->name('failed');
+        Route::post('/order/{order}/cancel', 'cancel')->name('cancel');
     });
 
     // ===== MESSAGES =====

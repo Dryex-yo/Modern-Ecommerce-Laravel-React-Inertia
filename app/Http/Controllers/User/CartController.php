@@ -7,7 +7,8 @@ use App\Http\Controllers\Controller;
 use App\Models\Cart;
 use App\Models\Product;
 use App\Models\Order;      
-use App\Models\OrderItem;  
+use App\Models\OrderItem;
+use App\Models\Message;  
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Support\Facades\Auth;
@@ -20,6 +21,7 @@ class CartController extends Controller
 {
     public function index(Request $request): Response
     {
+        /** @var \App\Models\User $user */
         $user = Auth::user();
         $defaultAddress = $user->addresses()->where('is_default', true)->first() ?? $user->addresses()->first();
         $formattedAddress = '';
@@ -153,6 +155,7 @@ class CartController extends Controller
 
         // ==== LOGIC ONGKIR DINAMIS J&T (Sama dengan Index) ====
         // Ambil kota user saat ini dari relasi address mereka (anggap alamat pengiriman selalu dari default address)
+        /** @var \App\Models\User $userObj */
         $userObj = Auth::user();
         $defaultAddressObj = $userObj->addresses()->where('is_default', true)->first() 
             ?? $userObj->addresses()->first();
@@ -223,9 +226,28 @@ class CartController extends Controller
 
                 // 6. Hapus Keranjang setelah Checkout
                 Cart::where('user_id', Auth::id())->delete();
+
+                // 7. Buat notifikasi pesan untuk admin tentang order baru
+                $user = Auth::user();
+                $itemSummary = $cartItems->map(function ($item) {
+                    return $item->product->name . ' (qty: ' . $item->quantity . ')';
+                })->join(', ');
+
+                Message::create([
+                    'customer_id' => Auth::id(),
+                    'customer_name' => $user->name,
+                    'customer_email' => $user->email,
+                    'message' => 'Pesanan baru dibuat - Order #' . $newOrder->order_number . ' | Total: Rp ' . number_format($totalPrice, 0, ',', '.') . ' | Item: ' . $itemSummary,
+                    'status' => 'pending'
+                ]);
             });
 
-            return redirect()->route('orders.show', $newOrder->id)->with('message', 'Checkout Berhasil!');
+            if (!$newOrder) {
+                return redirect()->back()->with('error', 'Gagal membuat pesanan.');
+            }
+
+            // Redirect to payment page instead of order detail
+            return redirect()->route('payment.initiate', $newOrder->id)->with('message', 'Pesanan berhasil dibuat. Silakan lakukan pembayaran.');
 
         } catch (\Exception $e) {
             return redirect()->back()->with('error', 'Terjadi kesalahan: ' . $e->getMessage());
