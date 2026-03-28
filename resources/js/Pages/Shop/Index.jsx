@@ -7,6 +7,7 @@ export default function ShopIndex({ auth, products, categories }) {
     // Mengambil data cart_count dari global props jika tersedia
     const { cart_count } = usePage().props;
     const [searchQuery, setSearchQuery] = useState('');
+    const [selectedCategory, setSelectedCategory] = useState('all');
 
     // Fungsi untuk menambah ke keranjang
     const handleAddToCart = (e, productId) => {
@@ -27,12 +28,17 @@ export default function ShopIndex({ auth, products, categories }) {
         });
     };
 
-    // Filter produk berdasarkan pencarian secara real-time
+    // Filter produk berdasarkan pencarian dan kategori secara real-time
     const filteredProducts = useMemo(() => {
-        return products.filter((p) => 
-            p.name.toLowerCase().includes(searchQuery.toLowerCase())
-        );
-    }, [searchQuery, products]);
+        return products.filter((p) => {
+            const matchesSearch = p.name.toLowerCase().includes(searchQuery.toLowerCase());
+            const matchesCategory = selectedCategory === 'all' || p.category?.name === selectedCategory;
+            return matchesSearch && matchesCategory;
+        });
+    }, [searchQuery, selectedCategory, products]);
+
+    // Ekstrak unique categories dari products
+    const categoryOptions = ['all', ...new Set(products.filter(p => p.category).map(p => p.category?.name))];
 
     return (
         <UserLayout user={auth.user}>
@@ -72,6 +78,32 @@ export default function ShopIndex({ auth, products, categories }) {
                             </button>
                         )}
                     </div>
+                </div>
+
+                {/* Category Filter */}
+                <div className="mb-8 flex flex-col gap-4">
+                    <div className="flex flex-wrap gap-3">
+                        {categoryOptions.map((cat) => (
+                            cat && (
+                                <button
+                                    key={cat}
+                                    onClick={() => setSelectedCategory(cat)}
+                                    className={`px-6 py-3 rounded-xl font-bold text-xs tracking-widest uppercase transition-all duration-300 ${
+                                        selectedCategory === cat
+                                            ? 'bg-gradient-to-r from-blue-600 to-blue-500 text-white shadow-lg shadow-blue-600/30 scale-105'
+                                            : 'bg-slate-100 text-slate-700 hover:bg-slate-200 border-2 border-slate-200'
+                                    }`}
+                                >
+                                    {typeof cat === 'string' ? cat.charAt(0).toUpperCase() + cat.slice(1) : cat}
+                                </button>
+                            )
+                        ))}
+                    </div>
+                    
+                    {/* Results Count */}
+                    <p className="text-sm text-slate-500 font-semibold">
+                        <span className="text-blue-600 font-bold">{filteredProducts.length}</span> {filteredProducts.length === 1 ? 'item' : 'items'}
+                    </p>
                 </div>
 
                 {/* Grid Produk */}

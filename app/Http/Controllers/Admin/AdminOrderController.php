@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Order;
+use App\Services\PaymentGatewayService;
 use Illuminate\Http\Request;
 use Illuminate\Http\RedirectResponse;
 use Inertia\Inertia;
@@ -12,6 +13,13 @@ use Illuminate\Support\Facades\Auth;
 
 class AdminOrderController extends Controller
 {
+    private PaymentGatewayService $paymentGatewayService;
+
+    public function __construct(PaymentGatewayService $paymentGatewayService)
+    {
+        $this->paymentGatewayService = $paymentGatewayService;
+    }
+
     /**
      * Menampilkan daftar semua pesanan untuk Admin.
      */
@@ -60,11 +68,19 @@ class AdminOrderController extends Controller
             'status' => 'required|string|in:Pending,Processing,Completed,Cancelled',
         ]);
 
+        $oldStatus = $order->status;
+        $newStatus = $request->status;
+
         $order->update([
-            'status' => $request->status
+            'status' => $newStatus
         ]);
 
-        return redirect()->back()->with('success', 'Status pesanan berhasil diperbarui.');
+        // Restore product stock if order is being cancelled
+        if ($newStatus === 'Cancelled' && $oldStatus !== 'Cancelled') {
+            $this->restoreProductStock($order);
+        }
+
+        return redirect()->back()->with('success', 'Status pesanan berhasil diperbarui dan stock telah dikembalikan.');
     }
 
     /**
@@ -88,7 +104,23 @@ class AdminOrderController extends Controller
             'status' => 'Cancelled'
         ]);
 
-        return redirect()->back()->with('success', 'Pesanan berhasil ditolak.');
+        // Restore product stock when order is rejected
+        $this->restoreProductStock($order);
+
+        return redirect()->back()->with('success', 'Pesanan berhasil ditolak dan stock telah dikembalikan.');
+    }
+
+    /**
+     * Restore product stock when order is cancelled or rejected.
+     *
+     * @param Order $order
+     * @return void
+     */
+    private function restoreProductStock(Order $order): void
+    {
+        foreach ($order->items as $item) {
+            $item->product->increment('stock', $item->quantity);
+        }
     }
 
     /**

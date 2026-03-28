@@ -147,7 +147,7 @@ Semua payment routes:
 GET /payment/order/{order} → payment.show
 
 // Initiate payment (create transaction)
-POST /payment/order/{order}/initiate → payment.initiate
+GET|POST /payment/order/{order}/initiate → payment.initiate
 
 // Check payment status (AJAX)
 GET /payment/order/{order}/status → payment.check-status

@@ -1,5 +1,5 @@
 import AdminLayout from '@/Layouts/AdminLayout';
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Head, useForm, Link } from '@inertiajs/react';
 
 export default function Create({ auth, categories }) {
@@ -18,6 +18,7 @@ export default function Create({ auth, categories }) {
     const [imagePreview, setImagePreview] = useState(null);
     const [galleryPreviews, setGalleryPreviews] = useState([]);
     const [draggedIndex, setDraggedIndex] = useState(null);
+    const [submitError, setSubmitError] = useState('');
     
     const handleImageChange = (e) => {
         const file = e.target.files[0];
@@ -60,11 +61,29 @@ export default function Create({ auth, categories }) {
 
     const handleSubmit = (e) => {
         e.preventDefault();
+        setSubmitError('');
+        
+        // Validate image is selected
+        if (!data.image) {
+            setSubmitError('Gambar produk wajib diunggah');
+            return;
+        }
+
+        // Filter out null values from gallery before submitting
+        const cleanedGallery = data.gallery.filter(file => file !== null);
+        
         post(route('admin.products.store'), {
+            ...data,
+            gallery: cleanedGallery,
             forceFormData: true,
             preserveScroll: true,
-            onSuccess: () => {
+            onSuccess: (response) => {
                 window.location.href = route('admin.products.index');
+            },
+            onError: (errors) => {
+                console.error('Form submission error:', errors);
+                const errorMessages = Object.values(errors).flat().join('\n');
+                setSubmitError(errorMessages || 'Terjadi kesalahan saat membuat produk. Silakan lihat console untuk detail.');
             },
         });
     };
@@ -80,6 +99,12 @@ export default function Create({ auth, categories }) {
 
             <div className="bg-white rounded-[2.5rem] p-10 shadow-sm border border-white max-w-2xl">
                 <form onSubmit={handleSubmit} className="space-y-6">
+                    {submitError && (
+                        <div className="bg-red-50 border-l-4 border-red-500 p-4 rounded">
+                            <p className="text-red-700 font-semibold text-sm">Error:</p>
+                            <p className="text-red-600 text-sm whitespace-pre-wrap">{submitError}</p>
+                        </div>
+                    )}
                     <div>
                         <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Product Name</label>
                         <input 

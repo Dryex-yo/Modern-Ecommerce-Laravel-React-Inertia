@@ -133,7 +133,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     // ===== PAYMENT =====
     Route::controller(PaymentController::class)->prefix('payment')->name('payment.')->group(function () {
         Route::get('/order/{order}', 'show')->name('show');
-        Route::post('/order/{order}/initiate', 'initiate')->name('initiate');
+        Route::match(['get', 'post'], '/order/{order}/initiate', 'initiate')->name('initiate');
         Route::get('/order/{order}/status', 'checkStatus')->name('check-status');
         Route::get('/order/{order}/success', 'success')->name('success');
         Route::get('/order/{order}/failed', 'failed')->name('failed');

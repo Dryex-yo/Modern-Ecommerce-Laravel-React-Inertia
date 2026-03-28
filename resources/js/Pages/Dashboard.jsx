@@ -207,28 +207,22 @@ export default function UserDashboard() {
 
                             <div className="space-y-2 text-[9px] font-bold text-slate-500">
                                 <div className="flex items-center gap-2">
-                                    <span className={accountHealth >= 20 ? 'text-emerald-500' : 'text-slate-300'}>
-                                        {accountHealth >= 20 ? '✓' : '○'}
+                                    <span className={accountHealth >= 25 ? 'text-emerald-500' : 'text-slate-300'}>
+                                        {accountHealth >= 25 ? '✓' : '○'}
                                     </span>
                                     <span>Avatar</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className={accountHealth >= 40 ? 'text-emerald-500' : 'text-slate-300'}>
-                                        {accountHealth >= 40 ? '✓' : '○'}
+                                    <span className={accountHealth >= 50 ? 'text-emerald-500' : 'text-slate-300'}>
+                                        {accountHealth >= 50 ? '✓' : '○'}
                                     </span>
                                     <span>Bio</span>
                                 </div>
                                 <div className="flex items-center gap-2">
-                                    <span className={accountHealth >= 60 ? 'text-emerald-500' : 'text-slate-300'}>
-                                        {accountHealth >= 60 ? '✓' : '○'}
+                                    <span className={accountHealth >= 100 ? 'text-emerald-500' : 'text-slate-300'}>
+                                        {accountHealth >= 100 ? '✓' : '○'}
                                     </span>
                                     <span>Address</span>
-                                </div>
-                                <div className="flex items-center gap-2">
-                                    <span className={accountHealth >= 80 ? 'text-emerald-500' : 'text-slate-300'}>
-                                        {accountHealth >= 80 ? '✓' : '○'}
-                                    </span>
-                                    <span>Payment</span>
                                 </div>
                             </div>
 

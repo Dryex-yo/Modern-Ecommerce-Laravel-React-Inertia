@@ -39,6 +39,10 @@ class ProductService
         // Store gallery images (max 10)
         if (!empty($data['gallery']) && is_array($data['gallery'])) {
             foreach (array_slice($data['gallery'], 0, 10) as $file) {
+                // Skip null values
+                if ($file === null) {
+                    continue;
+                }
                 $path = $file->store('products/gallery', 'public');
                 $product->images()->create(['image_path' => $path]);
             }
@@ -84,6 +88,10 @@ class ProductService
         // Handle gallery images
         if (!empty($data['gallery']) && is_array($data['gallery'])) {
             foreach (array_slice($data['gallery'], 0, 10) as $file) {
+                // Skip null values
+                if ($file === null) {
+                    continue;
+                }
                 $path = $file->store('products/gallery', 'public');
                 $product->images()->create(['image_path' => $path]);
             }
